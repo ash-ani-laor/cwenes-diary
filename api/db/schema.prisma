@@ -1,24 +1,58 @@
-// Don't forget to tell Prisma about your edits to this file using
-// `yarn rw prisma migrate dev` or `yarn rw prisma db push`.
-// `migrate` is like committing while `push` is for prototyping.
-// Read more about both here:
-// https://www.prisma.io/docs/orm/prisma-migrate
+generator client {
+  provider = "prisma-client-js"
+}
 
 datasource db {
   provider = "sqlite"
-  url      = env("DATABASE_URL")
+  url      = "file:./dev.db"
 }
 
-generator client {
-  provider      = "prisma-client-js"
-  binaryTargets = "native"
+model User {
+  id          Int          @id @default(autoincrement())
+  login       String       @unique
+  password    String
+  theme       String       @default("brown")
+  motto       String?
+  posts       Post[]
+  divinations Divination[]
+  drafts      Draft[]      // <=== добавили это
 }
 
-// Define your own datamodels here and run `yarn redwood prisma migrate dev`
-// to create migrations for them and apply to your dev DB.
-// TODO: Please remove the following example:
-model UserExample {
-  id    Int     @id @default(autoincrement())
-  email String  @unique
-  name  String?
+model Post {
+  id            Int          @id @default(autoincrement())
+  userId        Int
+  title         String
+  content       String
+  tags          String       // JSON stringified
+  type          String       @default("diary")
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  divination    Divination?  @relation(fields: [divinationId], references: [id])
+  divinationId  Int?         @unique
+  user          User         @relation(fields: [userId], references: [id])
+}
+
+model Divination {
+  id               Int       @id @default(autoincrement())
+  userId           Int
+  question         String
+  questionFixedTime DateTime
+  layout           String    // JSON stringified
+  tags             String    // JSON stringified
+  timestamp        DateTime  @default(now())
+  groups           String?   // JSON stringified
+  title            String
+  previewImage     String?
+  post             Post?
+  postId           Int?
+  user             User      @relation(fields: [userId], references: [id])
+}
+
+model Draft {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  type      String
+  data      String   // JSON stringified
+  updatedAt DateTime @default(now()) @updatedAt
+  user      User     @relation(fields: [userId], references: [id])
 }
