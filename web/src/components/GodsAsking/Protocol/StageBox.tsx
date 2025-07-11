@@ -23,9 +23,35 @@ const StageBox = () => {
     addLinkPoint,
     finishLink,
     removeLink,
+    removeSymbol,
   } = useProtocolStore()
 
   const [hoveredLinkId, setHoveredLinkId] = React.useState<string | null>(null)
+  const [hoveredSymbolId, setHoveredSymbolId] = React.useState<string | null>(
+    null
+  )
+  const [hoveredSymbol, setHoveredSymbol] = React.useState<null | {
+    id: string
+    x: number
+    y: number
+  }>(null)
+  const [pendingDelete, setPendingDelete] = React.useState<null | string>(null)
+  const [showRemoveTooltip, setShowRemoveTooltip] = React.useState(false)
+
+  React.useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Shift') setShowRemoveTooltip(true)
+    }
+    const onKeyUp = (e: KeyboardEvent) => {
+      if (e.key === 'Shift') setShowRemoveTooltip(false)
+    }
+    window.addEventListener('keydown', onKeyDown)
+    window.addEventListener('keyup', onKeyUp)
+    return () => {
+      window.removeEventListener('keydown', onKeyDown)
+      window.removeEventListener('keyup', onKeyUp)
+    }
+  }, [])
 
   React.useEffect(() => {
     if (!isAddLinkMode) return
@@ -134,11 +160,39 @@ const StageBox = () => {
                 e.evt.preventDefault()
                 rotateSymbol(item.instanceId)
               }}
+              onDblClick={(e) => {
+                if (e.evt.shiftKey) {
+                  removeSymbol(item.instanceId)
+                  setPendingDelete(item.instanceId)
+                  e.cancelBubble = true
+                }
+              }}
+              onMouseEnter={(e) => {
+                setHoveredSymbol({
+                  id: item.instanceId,
+                  x: item.x + 36, // чуть справа от плашки, можно подвинуть по вкусу
+                  y: item.y,
+                })
+                e.target.getStage().container().style.cursor = window.event
+                  ?.shiftKey
+                  ? 'pointer'
+                  : 'grab'
+              }}
+              onMouseLeave={(e) => {
+                setHoveredSymbol(null)
+                e.target.getStage().container().style.cursor = 'default'
+              }}
             >
               <Rect
                 width={32}
                 height={32}
-                fill={item.isRune ? '#bae6fd' : '#fef08a'}
+                fill={
+                  hoveredSymbolId === item.instanceId && window.event?.shiftKey
+                    ? '#fecaca' // Красноватый, если shift + наведено
+                    : item.isRune
+                      ? '#bae6fd'
+                      : '#fef08a'
+                }
                 cornerRadius={16}
               />
               <Text
@@ -157,6 +211,17 @@ const StageBox = () => {
               />
             </Group>
           ))}
+          {hoveredSymbol && showRemoveTooltip && (
+            <Text
+              text="Shift + двойной клик — удалить"
+              x={hoveredSymbol.x}
+              y={hoveredSymbol.y}
+              fontSize={14}
+              fill="#dc2626"
+              padding={4}
+              listening={false}
+            />
+          )}
           {hoveredLinkId && (
             <Text
               text="Shift + двойной клик — удалить"
@@ -165,6 +230,61 @@ const StageBox = () => {
               fontSize={16}
               fill="red"
             />
+          )}
+          {pendingDelete && (
+            <Group
+              x={PROTOCOL_CANVAS_WIDTH / 2 - 80}
+              y={PROTOCOL_CANVAS_HEIGHT / 2 - 40}
+            >
+              <Rect
+                width={160}
+                height={80}
+                fill="#fff"
+                stroke="#dc2626"
+                strokeWidth={2}
+                cornerRadius={10}
+              />
+              <Text
+                text="Удалить плашку?"
+                x={0}
+                y={10}
+                width={160}
+                align="center"
+                fontSize={16}
+                fill="#dc2626"
+                listening={false}
+              />
+              <Group
+                x={20}
+                y={40}
+                onClick={() => {
+                  removeSymbol(pendingDelete)
+                  setPendingDelete(null)
+                  setHoveredSymbol(null)
+                }}
+              >
+                <Rect width={50} height={28} fill="#fecaca" cornerRadius={6} />
+                <Text
+                  text="Да"
+                  width={50}
+                  align="center"
+                  fontSize={15}
+                  y={5}
+                  fill="#dc2626"
+                />
+              </Group>
+              <Group x={90} y={40} onClick={() => setPendingDelete(null)}>
+                <Rect width={50} height={28} fill="#f3f4f6" cornerRadius={6} />
+                <Text
+                  text="Нет"
+                  width={50}
+                  align="center"
+                  fontSize={15}
+                  y={5}
+                  fill="#4b5563"
+                />
+              </Group>
+            </Group>
           )}
         </Layer>
       </Stage>

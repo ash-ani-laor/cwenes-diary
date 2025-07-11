@@ -30,6 +30,7 @@ interface ProtocolState {
   setQuestion: (q: string) => void
   fixQuestion: () => void
   reset: () => void
+  removeSymbol: (instanceId: string) => void
 
   toggleAddLinkMode: () => void
   startLink: (instanceId: string, x: number, y: number) => void
@@ -90,6 +91,11 @@ export const useProtocolStore = create<ProtocolState>((set, get) => ({
       links: [],
       isAddLinkMode: false,
     }),
+
+  removeSymbol: (instanceId) =>
+    set((state) => ({
+      symbols: state.symbols.filter((item) => item.instanceId !== instanceId),
+    })),
 
   toggleAddLinkMode: () =>
     set((state) => ({ isAddLinkMode: !state.isAddLinkMode })),
