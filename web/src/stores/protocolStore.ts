@@ -1,10 +1,8 @@
-/*
- * web/src/stores/protocolStore.ts
- */
+/* * web/src/stores/protocolStore.ts */
 import { create } from 'zustand'
 
 export interface SymbolInstance {
-  id: number        // ID из набора
+  id: number // ID из набора
   symbol: string
   isRune: boolean
   instanceId: string
@@ -13,22 +11,37 @@ export interface SymbolInstance {
   rotation?: number
 }
 
+export interface LinkInstance {
+  id: string
+  fromInstanceId: string
+  points: { x: number; y: number }[]
+}
+
 interface ProtocolState {
   symbols: SymbolInstance[]
   question: string
   questionFixedTime: string | null
+  links: LinkInstance[]
+  isAddLinkMode: boolean
+
   addSymbol: (symbol: Omit<SymbolInstance, 'instanceId'>) => void
   updateSymbolPosition: (instanceId: string, x: number, y: number) => void
   rotateSymbol: (instanceId: string) => void
   setQuestion: (q: string) => void
   fixQuestion: () => void
   reset: () => void
+
+  toggleAddLinkMode: () => void
+  startLink: (instanceId: string, x: number, y: number) => void
+  addLinkPoint: (x: number, y: number) => void
 }
 
-export const useProtocolStore = create<ProtocolState>((set) => ({
+export const useProtocolStore = create<ProtocolState>((set, get) => ({
   symbols: [],
   question: '',
   questionFixedTime: null,
+  links: [],
+  isAddLinkMode: false,
 
   addSymbol: (symbol) =>
     set((state) => ({
@@ -70,5 +83,32 @@ export const useProtocolStore = create<ProtocolState>((set) => ({
       symbols: [],
       question: '',
       questionFixedTime: null,
+      links: [],
+      isAddLinkMode: false,
+    }),
+
+  toggleAddLinkMode: () =>
+    set((state) => ({ isAddLinkMode: !state.isAddLinkMode })),
+
+  startLink: (instanceId, x, y) =>
+    set((state) => ({
+      links: [
+        ...state.links,
+        {
+          id: `${instanceId}-${Date.now()}`,
+          fromInstanceId: instanceId,
+          points: [{ x, y }],
+        },
+      ],
+    })),
+
+  addLinkPoint: (x, y) =>
+    set((state) => {
+      if (state.links.length === 0) return {} as any
+      const newLinks = [...state.links]
+      const last = newLinks[newLinks.length - 1]
+      last.points = [...last.points, { x, y }]
+      newLinks[newLinks.length - 1] = last
+      return { links: newLinks }
     }),
 }))
