@@ -1,106 +1,121 @@
 /*
- * web/src/components/Protocol/StageBox.tsx
+ * web/src/components/GodsAsking/Protocol/StageBox.tsx
  */
 import React from 'react'
 
+import { Stage, Layer, Group, Rect, Text, Line } from 'react-konva'
+
 import { useProtocolStore } from 'src/stores/protocolStore'
 
-import StageLinks from './StageLinks'
+const WIDTH = 500
+const HEIGHT = 320
 
 const StageBox = () => {
-  const { symbols, addSymbol, updateSymbolPosition } = useProtocolStore()
+  const {
+    symbols,
+    links,
+    isAddLinkMode,
+    rotateSymbol,
+    updateSymbolPosition,
+    startLink,
+    addLinkPoint,
+  } = useProtocolStore()
 
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault()
-    const rawData = e.dataTransfer.getData('text/plain')
+  const handleDragEnd = (e, id) => {
+    const x = e.target.x()
+    const y = e.target.y()
+    updateSymbolPosition(id, x, y)
+    console.log('move', id, x, y)
+  }
 
-    if (!rawData) {
-      console.warn('No data received in drop event')
+  // Обработка клика по канвасу (только если линия уже начата)
+  const handleStageClick = (e) => {
+    if (!isAddLinkMode) return
+    const stage = e.target.getStage()
+    const pointer = stage.getPointerPosition()
+    if (!pointer) return
+
+    const currentLinks = useProtocolStore.getState().links
+    if (
+      !currentLinks.length ||
+      currentLinks[currentLinks.length - 1].points.length === 0
+    ) {
+      // Если линии нет — ничего не делаем
       return
-    }
-
-    let data
-    try {
-      data = JSON.parse(rawData)
-    } catch (err) {
-      console.error('Invalid JSON data', err)
-      return
-    }
-
-    const rect = e.currentTarget.getBoundingClientRect()
-    const x = e.clientX - rect.left
-    const y = e.clientY - rect.top
-
-    const tileSize = 32
-    const clampedX = Math.min(Math.max(x, 0), rect.width - tileSize)
-    const clampedY = Math.min(Math.max(y, 0), rect.height - tileSize)
-
-    if (data.instanceId) {
-      updateSymbolPosition(data.instanceId, clampedX, clampedY)
     } else {
-      addSymbol({
-        id: data.id,
-        symbol: data.symbol,
-        isRune: data.isRune,
-        x: clampedX,
-        y: clampedY,
-      })
+      addLinkPoint(pointer.x, pointer.y)
     }
   }
 
+  // Обработка клика по плашке
+  const handleSymbolClick = (item, e) => {
+    if (!isAddLinkMode) return
+    const stage = e.target.getStage()
+    const pointer = stage.getPointerPosition()
+    if (!pointer) return
+    startLink(item.instanceId, pointer.x, pointer.y)
+    e.cancelBubble = true // чтобы клик не пошёл в Stage!
+  }
+
   return (
-    <div
-      className="relative h-80 flex-1 border p-2"
-      onDragOver={(e) => {
-        e.preventDefault()
-        // явно указываем эффект «move»
-        e.dataTransfer.dropEffect = 'move'
-        console.log('🟡 DragOver на тряпочке')
-      }}
-      onDrop={(e) => {
-        console.log(
-          '🔴 Drop на тряпочке:',
-          e.dataTransfer.getData('text/plain')
-        )
-        handleDrop(e)
-      }}
-    >
-      <StageLinks />
-      {symbols.map((item) => (
-        <div
-          key={item.instanceId}
-          className={`
-                        absolute flex
-                        h-8 w-8 cursor-move
-                        items-center justify-center
-                        rounded-full border text-2xl
-                        ${item.isRune ? 'bg-blue-100' : 'bg-yellow-100'}
-                      `}
-          style={{
-            top: item.y,
-            left: item.x,
-            transform: `rotate(${item.rotation || 0}deg)`,
-          }}
-          draggable
-          onDragStart={(e) => {
-            // ⚙️ То же для уже существующих инстансов
-            const { width, height } = e.currentTarget.getBoundingClientRect()
-            e.dataTransfer.setData(
-              'text/plain',
-              JSON.stringify({
-                ...item,
-                width,
-                height,
-              })
-            )
-            e.dataTransfer.setDragImage(e.currentTarget, 0, 0)
-            e.dataTransfer.effectAllowed = 'move'
-          }}
-        >
-          {item.symbol}
-        </div>
-      ))}
-    </div>
+    <>
+      {/* <pre>{JSON.stringify(links)}</pre> */}
+      <Stage
+        width={WIDTH}
+        height={HEIGHT}
+        style={{ border: '2px solid #f4ce73', background: 'white' }}
+        onClick={handleStageClick}
+      >
+        <Layer>
+          {/* Линии */}
+          {links.map((link) => (
+            <Line
+              key={link.id}
+              points={link.points.flatMap((p) => [p.x, p.y])}
+              stroke="blue"
+              strokeWidth={2}
+              tension={0.5}
+            />
+          ))}
+          {/* Плашки */}
+          {symbols.map((item) => (
+            <Group
+              key={item.instanceId}
+              x={item.x}
+              y={item.y}
+              draggable
+              onDragEnd={(e) => handleDragEnd(e, item.instanceId)}
+              onClick={(e) => handleSymbolClick(item, e)}
+              onContextMenu={(e) => {
+                e.evt.preventDefault()
+                rotateSymbol(item.instanceId)
+              }}
+            >
+              <Rect
+                width={32}
+                height={32}
+                fill={item.isRune ? '#bae6fd' : '#fef08a'}
+                cornerRadius={16}
+              />
+              <Text
+                text={item.symbol}
+                fontSize={24}
+                align="center"
+                verticalAlign="middle"
+                width={32}
+                height={32}
+                fill="#000"
+                rotation={item.rotation || 0}
+                offsetX={16} // половина ширины
+                offsetY={16} // половина высоты
+                x={16} // чтобы совместить с Rect, если Rect в (0,0)
+                y={16}
+              />
+            </Group>
+          ))}
+        </Layer>
+      </Stage>
+    </>
   )
 }
 

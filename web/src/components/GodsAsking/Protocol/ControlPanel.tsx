@@ -9,7 +9,7 @@ import { Button } from 'src/components/ui/Button'
 import { useProtocolStore } from 'src/stores/protocolStore'
 
 const ControlPanel = () => {
-  const { reset, toggleAddLinkMode } = useProtocolStore()
+  const { reset, toggleAddLinkMode, isAddLinkMode } = useProtocolStore()
 
   return (
     <div className="flex flex-col gap-2">

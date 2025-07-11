@@ -55,12 +55,14 @@ export const useProtocolStore = create<ProtocolState>((set, get) => ({
       ],
     })),
 
-  updateSymbolPosition: (instanceId, x, y) =>
+  updateSymbolPosition: (instanceId, x, y) => {
+    console.log('store update:', { instanceId, x, y })
     set((state) => ({
       symbols: state.symbols.map((item) =>
         item.instanceId === instanceId ? { ...item, x, y } : item
       ),
-    })),
+    }))
+  },
 
   rotateSymbol: (instanceId) =>
     set((state) => ({
