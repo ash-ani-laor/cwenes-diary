@@ -4,15 +4,18 @@
 import React from 'react'
 
 import { GodsAskingToolset } from 'src/constants/godsAskingToolset'
+import {
+  PROTOCOL_CANVAS_WIDTH,
+  PROTOCOL_CANVAS_HEIGHT,
+  TILE_SIZE,
+} from 'src/constants/protocolCanvas'
 import { useProtocolStore } from 'src/stores/protocolStore'
-
-// Размеры тряпочки (канваса) — должны совпадать с теми, что в StageBox
-const WIDTH = 500
-const HEIGHT = 320
 
 const SymbolJar = () => {
   const { addSymbol } = useProtocolStore()
 
+  /* eslint-disable jsx-a11y/click-events-have-key-events */
+  /* eslint-disable jsx-a11y/no-static-element-interactions */
   return (
     <div className="mb-2 flex flex-wrap gap-1 border p-2">
       {GodsAskingToolset.map((item) => (
@@ -30,8 +33,8 @@ const SymbolJar = () => {
               symbol: item.symbol,
               isRune: item.isRune,
               // Центр канваса, минус половина размера плашки (16px)
-              x: WIDTH / 2 - 16,
-              y: HEIGHT / 2 - 16,
+              x: PROTOCOL_CANVAS_WIDTH / 2 - TILE_SIZE / 2,
+              y: PROTOCOL_CANVAS_HEIGHT / 2 - TILE_SIZE / 2,
             })
           }}
         >

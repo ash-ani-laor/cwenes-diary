@@ -34,6 +34,8 @@ interface ProtocolState {
   toggleAddLinkMode: () => void
   startLink: (instanceId: string, x: number, y: number) => void
   addLinkPoint: (x: number, y: number) => void
+  finishLink: () => void
+  removeLink: (id: string) => void
 }
 
 export const useProtocolStore = create<ProtocolState>((set, get) => ({
@@ -113,4 +115,13 @@ export const useProtocolStore = create<ProtocolState>((set, get) => ({
       newLinks[newLinks.length - 1] = last
       return { links: newLinks }
     }),
+  finishLink: () =>
+    set((state) => {
+      // Можно просто выключить режим
+      return { isAddLinkMode: false }
+    }),
+  removeLink: (id) =>
+    set((state) => ({
+      links: state.links.filter((link) => link.id !== id),
+    })),
 }))
