@@ -19,8 +19,16 @@ export interface LinkInstance {
 
 interface ProtocolState {
   symbols: SymbolInstance[]
+
   question: string
   questionFixedTime: string | null
+  tempFixedTime: string | null // <--- добавить для выбора в пикере
+  setTempFixedTime: (date: string | null) => void
+  fixQuestion: () => void
+
+  tags: string[]
+  setTags: (tags: string[]) => void
+
   links: LinkInstance[]
   isAddLinkMode: boolean
 
@@ -28,9 +36,9 @@ interface ProtocolState {
   updateSymbolPosition: (instanceId: string, x: number, y: number) => void
   rotateSymbol: (instanceId: string) => void
   setQuestion: (q: string) => void
-  fixQuestion: () => void
   reset: () => void
   removeSymbol: (instanceId: string) => void
+  bringSymbolToFront: (instanceId: string) => void
 
   toggleAddLinkMode: () => void
   startLink: (instanceId: string, x: number, y: number) => void
@@ -43,6 +51,15 @@ export const useProtocolStore = create<ProtocolState>((set, get) => ({
   symbols: [],
   question: '',
   questionFixedTime: null,
+  tempFixedTime: null,
+  setTempFixedTime: (date) => set({ tempFixedTime: date }),
+
+  fixQuestion: () =>
+    set((state) => ({
+      questionFixedTime: state.tempFixedTime ?? new Date().toISOString(),
+      tempFixedTime: null,
+    })),
+
   links: [],
   isAddLinkMode: false,
 
@@ -78,11 +95,6 @@ export const useProtocolStore = create<ProtocolState>((set, get) => ({
 
   setQuestion: (q) => set({ question: q }),
 
-  fixQuestion: () =>
-    set({
-      questionFixedTime: new Date().toISOString(),
-    }),
-
   reset: () =>
     set({
       symbols: [],
@@ -96,6 +108,18 @@ export const useProtocolStore = create<ProtocolState>((set, get) => ({
     set((state) => ({
       symbols: state.symbols.filter((item) => item.instanceId !== instanceId),
     })),
+
+  bringSymbolToFront: (instanceId) =>
+    set((state) => {
+      const idx = state.symbols.findIndex(
+        (item) => item.instanceId === instanceId
+      )
+      if (idx === -1) return {}
+      const newArr = [...state.symbols]
+      const [item] = newArr.splice(idx, 1)
+      newArr.push(item) // В конец = поверх всех
+      return { symbols: newArr }
+    }),
 
   toggleAddLinkMode: () =>
     set((state) => ({ isAddLinkMode: !state.isAddLinkMode })),
@@ -130,4 +154,7 @@ export const useProtocolStore = create<ProtocolState>((set, get) => ({
     set((state) => ({
       links: state.links.filter((link) => link.id !== id),
     })),
+
+  tags: ['хору'],
+  setTags: (tags) => set({ tags }),
 }))

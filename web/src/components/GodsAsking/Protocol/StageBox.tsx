@@ -24,6 +24,7 @@ const StageBox = () => {
     finishLink,
     removeLink,
     removeSymbol,
+    bringSymbolToFront,
   } = useProtocolStore()
 
   const [hoveredLinkId, setHoveredLinkId] = React.useState<string | null>(null)
@@ -164,6 +165,10 @@ const StageBox = () => {
                 if (e.evt.shiftKey) {
                   removeSymbol(item.instanceId)
                   setPendingDelete(item.instanceId)
+                  e.cancelBubble = true
+                }
+                if (!e.evt.shiftKey) {
+                  bringSymbolToFront(item.instanceId)
                   e.cancelBubble = true
                 }
               }}

@@ -13,6 +13,7 @@ import { useProtocolStore } from 'src/stores/protocolStore'
 
 const SymbolJar = () => {
   const { addSymbol } = useProtocolStore()
+  const questionFixedTime = useProtocolStore((s) => s.questionFixedTime)
 
   /* eslint-disable jsx-a11y/click-events-have-key-events */
   /* eslint-disable jsx-a11y/no-static-element-interactions */
@@ -27,6 +28,10 @@ const SymbolJar = () => {
             ${item.isRune ? 'bg-blue-100' : 'bg-yellow-100'}
           `}
           title={item.symbol}
+          style={{
+            opacity: questionFixedTime ? 1 : 0.5,
+            pointerEvents: questionFixedTime ? 'auto' : 'none',
+          }}
           onClick={() => {
             addSymbol({
               id: item.id,
