@@ -27,6 +27,7 @@ const StageBox = () => {
     bringSymbolToFront,
   } = useProtocolStore()
 
+
   const [hoveredLinkId, setHoveredLinkId] = React.useState<string | null>(null)
   const [hoveredSymbolId, setHoveredSymbolId] = React.useState<string | null>(
     null

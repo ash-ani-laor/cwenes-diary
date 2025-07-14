@@ -45,6 +45,11 @@ interface ProtocolState {
   addLinkPoint: (x: number, y: number) => void
   finishLink: () => void
   removeLink: (id: string) => void
+
+  lastSavedAt: string | null
+  lastSavedData: string | null // сериализованный стор
+  version: number
+  markSaved: () => void
 }
 
 export const useProtocolStore = create<ProtocolState>((set, get) => ({
@@ -95,14 +100,24 @@ export const useProtocolStore = create<ProtocolState>((set, get) => ({
 
   setQuestion: (q) => set({ question: q }),
 
-  reset: () =>
+  reset: () => {
     set({
       symbols: [],
       question: '',
       questionFixedTime: null,
       links: [],
       isAddLinkMode: false,
-    }),
+      lastSavedAt: new Date().toISOString(),
+      lastSavedData: JSON.stringify({
+        symbols: [],
+        question: '',
+        questionFixedTime: null,
+        links: [],
+        isAddLinkMode: false,
+      }),
+      version: 1,
+    })
+  },
 
   removeSymbol: (instanceId) =>
     set((state) => ({
@@ -157,4 +172,19 @@ export const useProtocolStore = create<ProtocolState>((set, get) => ({
 
   tags: ['хору'],
   setTags: (tags) => set({ tags }),
+
+  lastSavedAt: null,
+  lastSavedData: null,
+  version: 1,
+
+  markSaved: () =>
+    set((state) => ({
+      lastSavedAt: new Date().toISOString(),
+      lastSavedData: JSON.stringify({
+        ...state,
+        lastSavedAt: undefined,
+        lastSavedData: undefined,
+      }),
+      version: state.version + 1,
+    })),
 }))

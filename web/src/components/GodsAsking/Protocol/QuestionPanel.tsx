@@ -2,9 +2,11 @@ import React, { useState } from 'react'
 
 import { LocalizationProvider, DateTimePicker } from '@mui/x-date-pickers'
 import { AdapterLuxon } from '@mui/x-date-pickers/AdapterLuxon'
+import { CheckCircle2, XCircle } from 'lucide-react'
 import { DateTime } from 'luxon'
 
 import { useProtocolStore } from 'src/stores/protocolStore'
+import { useIsDirty } from 'src/stores/useIsDirty'
 
 export const QuestionPanel = () => {
   const question = useProtocolStore((s) => s.question)
@@ -15,6 +17,9 @@ export const QuestionPanel = () => {
   const questionFixedTime = useProtocolStore((s) => s.questionFixedTime)
   const tempFixedTime = useProtocolStore((s) => s.tempFixedTime)
   const setTempFixedTime = useProtocolStore((s) => s.setTempFixedTime)
+  const lastSavedAt = useProtocolStore((s) => s.lastSavedAt)
+
+  const isDirty = useIsDirty()
 
   const [tagInput, setTagInput] = useState('')
 
@@ -79,8 +84,25 @@ export const QuestionPanel = () => {
           </button>
         )}
       </div>
+
       {questionFixedTime && (
         <div className="flex items-center space-x-2">
+          <span
+            className="ml-2 inline-flex cursor-pointer items-center text-xs"
+            title={
+              isDirty
+                ? 'Есть несохранённые изменения'
+                : lastSavedAt
+                  ? `Сохранено: ${new Date(lastSavedAt).toLocaleString('ru-RU')}`
+                  : 'Никогда не сохранялось'
+            }
+          >
+            {isDirty ? (
+              <XCircle className="h-4 w-4 text-red-500" />
+            ) : (
+              <CheckCircle2 className="h-4 w-4 text-green-500" />
+            )}
+          </span>
           <input
             type="text"
             value={tagInput}

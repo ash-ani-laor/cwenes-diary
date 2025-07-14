@@ -3,13 +3,25 @@
  */
 import React, { useRef, useState } from 'react'
 
+// import MuiAlert from '@mui/material/Alert'
 import gql from 'graphql-tag'
-import { Trash2, Link2, Download, Upload } from 'lucide-react'
+import {
+  Trash,
+  Trash2,
+  Link2,
+  Download,
+  Upload,
+  Save,
+  ScrollText,
+} from 'lucide-react'
 
 import { useMutation, useQuery } from '@redwoodjs/web'
 
 import { Button } from 'src/components/ui/Button'
+import { useDialog } from 'src/components/ui/DialogManager'
+import { useSnackbar } from 'src/components/ui/SnackbarManager'
 import { useProtocolStore } from 'src/stores/protocolStore'
+import { useIsDirty } from 'src/stores/useIsDirty'
 
 import { DivinationsList } from './DivinationsList'
 
@@ -36,16 +48,32 @@ const GET_DIVINATION = gql`
 `
 
 const ControlPanel = () => {
-  const { reset, toggleAddLinkMode, isAddLinkMode } = useProtocolStore()
+  const { reset, toggleAddLinkMode, isAddLinkMode, markSaved } =
+    useProtocolStore()
+
+  const [open, setOpen] = React.useState(false)
+  const [message, setMessage] = React.useState('')
+
+  const { showSnackbar } = useSnackbar()
+  const { showDialog } = useDialog()
+
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [showList, setShowList] = useState(false)
   const [createDivination] = useMutation(CREATE_DIVINATION)
   const [selectedId, setSelectedId] = useState<number | null>(null)
-  // const [getDivination] = useLazyQuery(GET_DIVINATION)
+
+  const isDirty = useIsDirty()
 
   // --- Сохранить в БД ---
   const handleSave = async () => {
     const store = useProtocolStore.getState()
+    if (!store.question || !store.questionFixedTime) {
+      showSnackbar({
+        message: 'Сначала зафиксируйте вопрос!',
+        severity: 'error',
+      })
+      return
+    }
     await createDivination({
       variables: {
         input: {
@@ -61,7 +89,8 @@ const ControlPanel = () => {
         },
       },
     })
-    alert('Расклад сохранён!')
+    markSaved()
+    showSnackbar({ message: 'Расклад сохранён!', severity: 'success' })
   }
 
   const { data } = useQuery(GET_DIVINATION, {
@@ -76,17 +105,6 @@ const ControlPanel = () => {
       setSelectedId(null) // сбрасываем id после загрузки
     },
   })
-
-  // // --- Загрузить из БД по id ---
-  // const handleLoadDivination = (id: number) => {
-  //   getDivination({ variables: { id } }).then((result) => {
-  //     const div = result?.data?.divination
-  //     if (div?.layout) {
-  //       const store = JSON.parse(div.layout)
-  //       useProtocolStore.setState({ ...store })
-  //     }
-  //   })
-  // }
 
   // --- Экспорт ---
   const sanitize = (str: string) =>
@@ -111,6 +129,7 @@ const ControlPanel = () => {
     a.download = filename
     a.click()
     URL.revokeObjectURL(url)
+    showSnackbar({ message: 'Расклад экспортирован!', severity: 'success' })
   }
 
   // --- Импорт ---
@@ -121,19 +140,43 @@ const ControlPanel = () => {
   const handleImport = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file) return
-    if (
-      !window.confirm(
-        'Импорт перезапишет текущее состояние расклада. Продолжить?'
-      )
-    )
-      return
+    if (isDirty) {
+      showDialog({
+        message:
+          'У вас есть несохранённые изменения. Импорт перезапишет расклад. Продолжить?',
+        confirmText: 'Импортировать',
+        cancelText: 'Отмена',
+        onConfirm: () => {
+          // здесь импортируем файл!
+          const reader = new FileReader()
+          reader.onload = (e) => {
+            try {
+              const data = JSON.parse(e.target?.result as string)
+              useProtocolStore.setState({ ...data })
+            } catch (err) {
+              showSnackbar({
+                message: `Ошибка при импорте файла: ${err.message || err}`,
+                severity: 'error',
+              })
+            }
+          }
+          reader.readAsText(file)
+          return
+        },
+      })
+    }
     const reader = new FileReader()
     reader.onload = (e) => {
       try {
         const data = JSON.parse(e.target?.result as string)
         useProtocolStore.setState({ ...data })
+        // Сбросить флажок черновика, чтобы DraftManager больше не спрашивал
+        sessionStorage.setItem('restored-draft-protocol', 'yes')
       } catch (err) {
-        alert('Ошибка при импорте файла')
+        showSnackbar({
+          message: `Ошибка при импорте файла: ${err.message || err}`,
+          severity: 'error',
+        })
       }
     }
     reader.readAsText(file)
@@ -141,7 +184,38 @@ const ControlPanel = () => {
 
   return (
     <div className="flex flex-col gap-2">
-      <Button onClick={reset} title="Очистить">
+      <Button onClick={reset} title="DEBUG Очистить">
+        <Trash />
+      </Button>
+      <Button
+        onClick={() => {
+          if (isDirty) {
+            showDialog({
+              message:
+                'У вас есть несохранённые изменения. Очистка расклада приведёт к потере данных. Продолжить?',
+              confirmText: 'Очистить',
+              cancelText: 'Отмена',
+              onConfirm: () => {
+                reset()
+                markSaved()
+                showSnackbar({
+                  message: 'Расклад очищен!',
+                  severity: 'success',
+                })
+              },
+              onCancel: () => {
+                console.log('Очистка отменена')
+                showSnackbar({
+                  message: 'Очистка отменена',
+                  severity: 'info',
+                })
+              },
+            })
+          }
+        }}
+        title="Очистить"
+        className="bg-red-500 text-white hover:bg-red-700"
+      >
         <Trash2 />
       </Button>
       <Button onClick={toggleAddLinkMode} title="Добавить линию">
@@ -161,10 +235,10 @@ const ControlPanel = () => {
         style={{ display: 'none' }}
       />
       <Button onClick={handleSave} title="Сохранить в БД">
-        Сохранить в БД
+        <Save />
       </Button>
       <Button onClick={() => setShowList(true)} title="Список раскладов">
-        Список раскладов
+        <ScrollText />
       </Button>
 
       {/* Модалка со списком раскладов */}
@@ -181,7 +255,6 @@ const ControlPanel = () => {
             <DivinationsList
               onSelect={(id) => {
                 setShowList(false)
-                // handleLoadDivination(id)
                 setSelectedId(id)
               }}
             />

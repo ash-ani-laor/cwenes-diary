@@ -1,6 +1,6 @@
 export const GodsAskingToolset = [
   // Хоггвы (id: 0–35, 36 символов)
-  { symbol: '⅄', isRune: false, id: 0, indexInJar: 0 },
+  { symbol: '⅄', isRune: false, id: 0, indexInJar: 0 }, // ᛸ
   { symbol: 'ͱ', isRune: false, id: 1, indexInJar: 1 },
   { symbol: 'ɾ', isRune: false, id: 2, indexInJar: 2 },
   { symbol: 'q', isRune: false, id: 3, indexInJar: 3 },
@@ -18,12 +18,12 @@ export const GodsAskingToolset = [
   { symbol: 'Ƒ', isRune: false, id: 15, indexInJar: 15 },
   { symbol: 'ɯ', isRune: false, id: 16, indexInJar: 16 },
   { symbol: 'ϵ', isRune: false, id: 17, indexInJar: 17 },
-  { symbol: 'ʞ', isRune: false, id: 18, indexInJar: 18 },
+  { symbol: 'ʞ', isRune: false, id: 18, indexInJar: 18 }, // ᛕ
   { symbol: 'd', isRune: false, id: 19, indexInJar: 19 },
   { symbol: 'ψ', isRune: false, id: 20, indexInJar: 20 },
   { symbol: 'Ξ', isRune: false, id: 21, indexInJar: 21 },
   { symbol: 'ʀ', isRune: false, id: 22, indexInJar: 22 },
-  { symbol: 'Պ', isRune: false, id: 23, indexInJar: 23 },
+  { symbol: 'Պ', isRune: false, id: 23, indexInJar: 23 }, // ᛣ / ᛦ
   { symbol: 'b', isRune: false, id: 24, indexInJar: 24 },
   { symbol: 'Ʋ', isRune: false, id: 25, indexInJar: 25 },
   { symbol: '⊥', isRune: false, id: 26, indexInJar: 26 },
@@ -45,7 +45,7 @@ export const GodsAskingToolset = [
   { symbol: 'ᚲ', isRune: true, id: 41, indexInJar: 41 },
   { symbol: 'ᚷ', isRune: true, id: 42, indexInJar: 42 },
   { symbol: 'ᚹ', isRune: true, id: 43, indexInJar: 43 },
-  { symbol: 'ᚺ', isRune: true, id: 44, indexInJar: 44 },
+  { symbol: 'ᚺ', isRune: true, id: 44, indexInJar: 44 }, // ᚻ
   { symbol: 'ᚾ', isRune: true, id: 45, indexInJar: 45 },
   { symbol: 'ᛁ', isRune: true, id: 46, indexInJar: 46 },
   { symbol: 'ᛃ', isRune: true, id: 47, indexInJar: 47 },
