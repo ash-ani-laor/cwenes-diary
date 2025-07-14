@@ -39,8 +39,7 @@ describe('divinations', () => {
         questionFixedTime: '2025-07-06T19:03:08.437Z',
         layout: 'String',
         tags: 'String',
-        title: 'String',
-      },
+        timestamp: '2025-07-06T19:03:08.437Z',},
     })
 
     expect(result.userId).toEqual(scenario.divination.two.userId)

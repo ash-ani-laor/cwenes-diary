@@ -40,8 +40,7 @@ model Divination {
   layout           String    // JSON stringified
   tags             String    // JSON stringified
   timestamp        DateTime  @default(now())
-  groups           String?   // JSON stringified
-  title            String
+  links            String?   // JSON stringified
   previewImage     String?
   post             Post?
   postId           Int?

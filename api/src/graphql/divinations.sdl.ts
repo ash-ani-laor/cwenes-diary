@@ -7,8 +7,7 @@ export const schema = gql`
     layout: String!
     tags: String!
     timestamp: DateTime!
-    groups: String
-    title: String!
+    links: String
     previewImage: String
     post: Post
     postId: Int
@@ -27,8 +26,7 @@ export const schema = gql`
     layout: String!
     tags: String!
     timestamp: DateTime!
-    groups: String
-    title: String!
+    links: String
     previewImage: String
     postId: Int
   }
@@ -40,8 +38,7 @@ export const schema = gql`
     layout: String
     tags: String
     timestamp: DateTime
-    groups: String
-    title: String
+    links: String
     previewImage: String
     postId: Int
   }

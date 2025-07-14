@@ -29,12 +29,12 @@ export const GodsAskingToolset = [
   { symbol: '⊥', isRune: false, id: 26, indexInJar: 26 },
   { symbol: 'է', isRune: false, id: 27, indexInJar: 27 },
   { symbol: 'T', isRune: false, id: 28, indexInJar: 28 },
-  { symbol: 'Ɣ', isRune: false, id: 29, indexInJar: 29 },
+  { symbol: '૪', isRune: false, id: 29, indexInJar: 29 },
   { symbol: 'Δ', isRune: false, id: 30, indexInJar: 30 },
   { symbol: 'փ', isRune: false, id: 31, indexInJar: 31 },
   { symbol: 'n', isRune: false, id: 32, indexInJar: 32 },
   { symbol: 'ᛋ', isRune: false, id: 33, indexInJar: 33 },
-  { symbol: '⁝', isRune: false, id: 34, indexInJar: 34 },
+  { symbol: '⁝', isRune: false, id: 34, indexInJar: 34 }, // ⋯
   { symbol: '‡', isRune: false, id: 35, indexInJar: 35 },
   // Руны (id: 36–60, 25 символов)
   { symbol: 'ᚠ', isRune: true, id: 36, indexInJar: 36 },
