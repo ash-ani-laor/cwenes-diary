@@ -1,3 +1,6 @@
+/**
+ * web\src\components\ui\DialogManager.tsx
+ */
 import React, { createContext, useCallback, useContext, useState } from 'react'
 
 import Button from '@mui/material/Button'

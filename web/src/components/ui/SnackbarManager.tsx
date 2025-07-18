@@ -1,3 +1,7 @@
+/**
+ * web\src\components\ui\SnackbarManager.tsx
+ */
+
 import React, { createContext, useCallback, useContext, useState } from 'react'
 
 import MuiAlert from '@mui/material/Alert'

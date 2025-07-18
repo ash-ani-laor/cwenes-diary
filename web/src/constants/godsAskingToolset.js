@@ -1,3 +1,6 @@
+/**
+ * web\src\constants\godsAskingToolset.js
+ */
 export const GodsAskingToolset = [
   // Хоггвы (id: 0–35, 36 символов)
   { symbol: '⅄', isRune: false, id: 0, indexInJar: 0 }, // ᛸ

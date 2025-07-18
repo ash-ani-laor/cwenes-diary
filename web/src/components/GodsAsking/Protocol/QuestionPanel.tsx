@@ -1,3 +1,6 @@
+/**
+ * web/src/components/GodsAsking/Protocol/QuestionPanel.tsx
+ */
 import React, { useState } from 'react'
 
 import { LocalizationProvider, DateTimePicker } from '@mui/x-date-pickers'
@@ -20,6 +23,7 @@ export const QuestionPanel = () => {
   const lastSavedAt = useProtocolStore((s) => s.lastSavedAt)
 
   const isDirty = useIsDirty()
+  console.log('[UI] isDirty:', isDirty)
 
   const [tagInput, setTagInput] = useState('')
 

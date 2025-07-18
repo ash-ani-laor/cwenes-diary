@@ -1,3 +1,6 @@
+/**
+ * web/src/App.tsx
+ */
 import type { ReactNode } from 'react'
 
 import { FatalErrorBoundary, RedwoodProvider } from '@redwoodjs/web'

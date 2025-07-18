@@ -1,3 +1,7 @@
+/**
+ * web\src\components\GodsAsking\Protocol\DraftManager.tsx
+ */
+
 import React from 'react'
 
 import gql from 'graphql-tag'
@@ -72,7 +76,7 @@ export const DraftManager = ({ type = DraftTypes.PROTOCOL, userId = 1 }) => {
         ) {
           try {
             const state = JSON.parse(draft.data)
-            useProtocolStore.setState({ ...state })
+            useProtocolStore.setState({ ...state, divinationId: null })
           } catch {}
         }
         sessionStorage.setItem(`restored-draft-${type}`, 'yes')

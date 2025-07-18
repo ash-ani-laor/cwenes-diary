@@ -1,4 +1,4 @@
-/* * web/src/stores/protocolStore.ts */
+/* web/src/stores/protocolStore.ts */
 import { create } from 'zustand'
 
 export interface SymbolInstance {
@@ -50,6 +50,8 @@ interface ProtocolState {
   lastSavedData: string | null // сериализованный стор
   version: number
   markSaved: () => void
+
+  divinationId: number | null
 }
 
 export const useProtocolStore = create<ProtocolState>((set, get) => ({
@@ -105,18 +107,26 @@ export const useProtocolStore = create<ProtocolState>((set, get) => ({
       symbols: [],
       question: '',
       questionFixedTime: null,
+      tempFixedTime: null,
       links: [],
       isAddLinkMode: false,
+      tags: ['хору'],
+      version: 1,
+      divinationId: null,
       lastSavedAt: new Date().toISOString(),
       lastSavedData: JSON.stringify({
         symbols: [],
         question: '',
         questionFixedTime: null,
+        tempFixedTime: null,
         links: [],
         isAddLinkMode: false,
+        tags: ['хору'],
+        version: 1,
+        divinationId: null,
       }),
-      version: 1,
     })
+    console.log('[RESET] После сброса:', useProtocolStore.getState())
   },
 
   removeSymbol: (instanceId) =>
@@ -177,14 +187,23 @@ export const useProtocolStore = create<ProtocolState>((set, get) => ({
   lastSavedData: null,
   version: 1,
 
-  markSaved: () =>
-    set((state) => ({
-      lastSavedAt: new Date().toISOString(),
-      lastSavedData: JSON.stringify({
+  markSaved: () => {
+    set((state) => {
+      const nextVersion = state.version + 1
+      const snapshot = JSON.stringify({
         ...state,
         lastSavedAt: undefined,
         lastSavedData: undefined,
-      }),
-      version: state.version + 1,
-    })),
+        version: nextVersion, // <-- именно это!
+      })
+      console.log('[markSaved] Сохранили стор:', snapshot)
+      return {
+        lastSavedAt: new Date().toISOString(),
+        lastSavedData: snapshot,
+        version: nextVersion,
+      }
+    })
+  },
+
+  divinationId: null,
 }))

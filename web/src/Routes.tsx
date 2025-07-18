@@ -1,3 +1,7 @@
+/**
+ * web/src/Routes.tsx
+ */
+
 // In this file, all Page components from 'src/pages` are auto-imported. Nested
 // directories are supported, and should be uppercase. Each subdirectory will be
 // prepended onto the component name.

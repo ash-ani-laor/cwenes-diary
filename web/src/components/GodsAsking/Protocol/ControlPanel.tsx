@@ -47,9 +47,16 @@ const GET_DIVINATION = gql`
   }
 `
 
+const UPDATE_DIVINATION = gql`
+  mutation UpdateDivination($id: Int!, $input: UpdateDivinationInput!) {
+    updateDivination(id: $id, input: $input) {
+      id
+    }
+  }
+`
+
 const ControlPanel = () => {
-  const { reset, toggleAddLinkMode, isAddLinkMode, markSaved } =
-    useProtocolStore()
+  const { reset, toggleAddLinkMode, isAddLinkMode } = useProtocolStore()
 
   const [open, setOpen] = React.useState(false)
   const [message, setMessage] = React.useState('')
@@ -63,6 +70,7 @@ const ControlPanel = () => {
   const [selectedId, setSelectedId] = useState<number | null>(null)
 
   const isDirty = useIsDirty()
+  const [updateDivination] = useMutation(UPDATE_DIVINATION)
 
   // --- Сохранить в БД ---
   const handleSave = async () => {
@@ -74,23 +82,35 @@ const ControlPanel = () => {
       })
       return
     }
-    await createDivination({
-      variables: {
-        input: {
-          userId: 1,
-          question: store.question,
-          questionFixedTime: store.questionFixedTime,
-          layout: JSON.stringify(store),
-          tags: JSON.stringify(store.tags),
-          timestamp: new Date().toISOString(), // обязательно!
-          links: JSON.stringify(store.links ?? []), // всегда строкой, даже если пустой
-          // previewImage: store.previewImage || null, // если есть, иначе null
-          // postId: store.postId ?? null, // если есть
+
+    const input = {
+      userId: 1, // (заменить на динамический userId в будущем)
+      question: store.question,
+      questionFixedTime: store.questionFixedTime,
+      layout: JSON.stringify(store),
+      tags: JSON.stringify(store.tags),
+      timestamp: new Date().toISOString(),
+      links: JSON.stringify(store.links ?? []),
+      // previewImage, postId и пр. — по необходимости
+    }
+
+    if (store.divinationId) {
+      // UPDATE
+      await updateDivination({
+        variables: {
+          id: store.divinationId,
+          input,
         },
-      },
-    })
-    markSaved()
-    showSnackbar({ message: 'Расклад сохранён!', severity: 'success' })
+      })
+      showSnackbar({ message: 'Расклад обновлён!', severity: 'success' })
+    } else {
+      // CREATE
+      const { data } = await createDivination({ variables: { input } })
+      useProtocolStore.setState({ divinationId: data.createDivination.id })
+      showSnackbar({ message: 'Расклад сохранён!', severity: 'success' })
+    }
+
+    useProtocolStore.getState().markSaved()
   }
 
   const { data } = useQuery(GET_DIVINATION, {
@@ -100,7 +120,10 @@ const ControlPanel = () => {
       const div = divData.divination
       if (div?.layout) {
         const store = JSON.parse(div.layout)
-        useProtocolStore.setState({ ...store })
+        useProtocolStore.setState({
+          ...store,
+          divinationId: div.id, // <--- ВАЖНО: сохраняем id из базы
+        })
       }
       setSelectedId(null) // сбрасываем id после загрузки
     },
@@ -115,6 +138,13 @@ const ControlPanel = () => {
 
   const handleExport = () => {
     const store = useProtocolStore.getState()
+    if (!store.question || !store.questionFixedTime) {
+      showSnackbar({
+        message: 'Сначала зафиксируйте вопрос!',
+        severity: 'error',
+      })
+      return
+    }
     const state = { ...store }
     const q = sanitize(store.question || 'no_question')
     const dt = store.questionFixedTime
@@ -139,7 +169,9 @@ const ControlPanel = () => {
 
   const handleImport = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
+    console.log('[IMPORT] handleImport called. File:', file)
     if (!file) return
+    console.log('[IMPORT] isDirty:', isDirty)
     if (isDirty) {
       showDialog({
         message:
@@ -147,12 +179,15 @@ const ControlPanel = () => {
         confirmText: 'Импортировать',
         cancelText: 'Отмена',
         onConfirm: () => {
-          // здесь импортируем файл!
+          console.log('[IMPORT] onConfirm fired!')
           const reader = new FileReader()
           reader.onload = (e) => {
             try {
               const data = JSON.parse(e.target?.result as string)
-              useProtocolStore.setState({ ...data })
+              console.log('[IMPORT] FileReader parsed data (onConfirm):', data)
+              useProtocolStore.setState({ ...data, divinationId: null }) // <--- сбросить id при импорте!
+              useProtocolStore.getState().markSaved()
+              showSnackbar({ message: 'Импорт выполнен!', severity: 'success' })
             } catch (err) {
               showSnackbar({
                 message: `Ошибка при импорте файла: ${err.message || err}`,
@@ -161,17 +196,19 @@ const ControlPanel = () => {
             }
           }
           reader.readAsText(file)
-          return
         },
       })
+      return
     }
+    console.log('[IMPORT] Importing immediately (not dirty)')
     const reader = new FileReader()
     reader.onload = (e) => {
       try {
         const data = JSON.parse(e.target?.result as string)
+        console.log('[IMPORT] FileReader parsed data (immediate):', data)
         useProtocolStore.setState({ ...data })
-        // Сбросить флажок черновика, чтобы DraftManager больше не спрашивал
-        sessionStorage.setItem('restored-draft-protocol', 'yes')
+        useProtocolStore.getState().markSaved()
+        showSnackbar({ message: 'Импорт выполнен!', severity: 'success' })
       } catch (err) {
         showSnackbar({
           message: `Ошибка при импорте файла: ${err.message || err}`,
@@ -184,9 +221,20 @@ const ControlPanel = () => {
 
   return (
     <div className="flex flex-col gap-2">
-      <Button onClick={reset} title="DEBUG Очистить">
+      <Button
+        onClick={() => {
+          reset()
+          useProtocolStore.getState().markSaved()
+          showSnackbar({
+            message: 'Расклад очищен!',
+            severity: 'success',
+          })
+        }}
+        title="DEBUG Очистить"
+      >
         <Trash />
       </Button>
+
       <Button
         onClick={() => {
           if (isDirty) {
@@ -196,20 +244,28 @@ const ControlPanel = () => {
               confirmText: 'Очистить',
               cancelText: 'Отмена',
               onConfirm: () => {
+                console.log('[DIALOG Очистить] Подтверждено пользователем')
                 reset()
-                markSaved()
+                useProtocolStore.getState().markSaved()
                 showSnackbar({
                   message: 'Расклад очищен!',
                   severity: 'success',
                 })
               },
               onCancel: () => {
-                console.log('Очистка отменена')
+                console.log('[DIALOG Очистить] Отменено пользователем')
                 showSnackbar({
                   message: 'Очистка отменена',
                   severity: 'info',
                 })
               },
+            })
+          } else {
+            reset()
+            useProtocolStore.getState().markSaved()
+            showSnackbar({
+              message: 'Расклад очищен!',
+              severity: 'success',
             })
           }
         }}
@@ -218,12 +274,15 @@ const ControlPanel = () => {
       >
         <Trash2 />
       </Button>
+
       <Button onClick={toggleAddLinkMode} title="Добавить линию">
         <Link2 />
       </Button>
-      <Button onClick={handleExport} title="Экспорт">
+
+      {/* <Button onClick={handleExport} title="Экспорт">
         <Download />
       </Button>
+
       <Button onClick={handleImportButtonClick} title="Импорт">
         <Upload />
       </Button>
@@ -233,10 +292,12 @@ const ControlPanel = () => {
         accept=".xrlo,application/json"
         onChange={handleImport}
         style={{ display: 'none' }}
-      />
+      /> */}
+
       <Button onClick={handleSave} title="Сохранить в БД">
         <Save />
       </Button>
+
       <Button onClick={() => setShowList(true)} title="Список раскладов">
         <ScrollText />
       </Button>
