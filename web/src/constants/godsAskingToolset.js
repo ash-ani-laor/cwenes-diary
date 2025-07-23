@@ -1,6 +1,33 @@
 /**
  * web\src\constants\godsAskingToolset.js
  */
+
+// перед хоггвой 1 - 'ᚠ'
+// перед хоггвой 2 - 'ᚢ'
+// перед хоггвой 3 - 'ᚦ'
+// после хоггвы 4 - 'ᚨ'
+// после хоггвы 6 - 'ᚱ'
+// после хоггвы 8 - 'ᚲ'
+// перед хоггвой 10 - 'ᚷ'
+// после хоггвы 11 - 'ᚹ'
+// после хоггвы 23 - 'ᚺ'
+// после хоггвы 24 - 'ᚾ'
+// после хоггвы 25 - 'ᛁ'
+// после хоггвы 26 - 'ᛃ'
+// после хоггвы 28 - 'ᛇ'
+// после хоггвы 31 - 'ᛈ'
+// перед хоггвой 32 - 'ᛉ'
+// после хоггвы 33 - 'ϟ'
+// после хоггвы 12 - 'ᛏ'
+// после хоггвы 13 - 'ᛒ'
+// после хоггвы 14 - 'ᛖ'
+// после хоггвы 15 - 'ᛗ'
+// после хоггвы 18 - 'ᛚ'
+// после хоггвы 19 - 'ᛝ'
+// после хоггвы 20 - 'ᛟ'
+// после хоггвы 22 - 'ᛞ'
+// после хоггвы 35 - '⮽'
+
 export const GodsAskingToolset = [
   // Хоггвы (id: 0–35, 36 символов)
   { symbol: '⅄', isRune: false, id: 0, indexInJar: 0 }, // ᛸ
@@ -26,7 +53,7 @@ export const GodsAskingToolset = [
   { symbol: 'ψ', isRune: false, id: 20, indexInJar: 20 },
   { symbol: 'Ξ', isRune: false, id: 21, indexInJar: 21 },
   { symbol: 'ʀ', isRune: false, id: 22, indexInJar: 22 },
-  { symbol: 'Պ', isRune: false, id: 23, indexInJar: 23 }, // ᛣ / ᛦ
+  { symbol: 'ᛦ', isRune: false, id: 23, indexInJar: 23 }, // ᛣ / ᛦ Պ
   { symbol: 'b', isRune: false, id: 24, indexInJar: 24 },
   { symbol: 'Ʋ', isRune: false, id: 25, indexInJar: 25 },
   { symbol: '⊥', isRune: false, id: 26, indexInJar: 26 },
@@ -37,7 +64,7 @@ export const GodsAskingToolset = [
   { symbol: 'փ', isRune: false, id: 31, indexInJar: 31 },
   { symbol: 'n', isRune: false, id: 32, indexInJar: 32 },
   { symbol: 'ᛋ', isRune: false, id: 33, indexInJar: 33 },
-  { symbol: '⁝', isRune: false, id: 34, indexInJar: 34 }, // ⋯
+  { symbol: '⋯', isRune: false, id: 34, indexInJar: 34 }, // ⋯ ⁝
   { symbol: '‡', isRune: false, id: 35, indexInJar: 35 },
   // Руны (id: 36–60, 25 символов)
   { symbol: 'ᚠ', isRune: true, id: 36, indexInJar: 36 },

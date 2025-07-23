@@ -1,13 +1,19 @@
-/**
- * START --- SETUP TAILWINDCSS EDIT
- *
- * `yarn rw setup ui tailwindcss` placed these directives here
- * to inject Tailwind's styles into your CSS.
- * For more information, see: https://tailwindcss.com/docs/installation
- */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-/**
- * END --- SETUP TAILWINDCSS EDIT
- */
+
+
+.w-md-editor,
+.w-md-editor-content,
+.w-md-editor-area {
+  height: 100% !important;
+  min-height: 0 !important;
+  max-height: none !important;
+}
+
+.w-md-editor {
+  /* это основной контейнер */
+  height: 100% !important;
+  min-height: 0 !important;
+  max-height: 100vh !important; /* ограничение на случай выхода за экран */
+}

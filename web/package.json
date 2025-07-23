@@ -19,10 +19,14 @@
     "@redwoodjs/forms": "8.6.3",
     "@redwoodjs/router": "8.6.3",
     "@redwoodjs/web": "8.6.3",
+    "@tailwindcss/typography": "^0.5.16",
+    "@uiw/react-markdown-preview": "^5.1.4",
+    "@uiw/react-md-editor": "^4.0.8",
     "humanize-string": "2.1.0",
     "luxon": "^3.7.1",
     "react": "18.3.1",
-    "react-dom": "18.3.1"
+    "react-dom": "18.3.1",
+    "react-markdown": "^10.1.0"
   },
   "devDependencies": {
     "@redwoodjs/vite": "8.6.3",

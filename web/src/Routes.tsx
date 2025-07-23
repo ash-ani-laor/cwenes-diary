@@ -20,6 +20,8 @@ const Routes = () => {
     <Router>
       <Route path="/protocol" page={ProtocolPage} name="protocol" />
 
+      <Route path="/journal" page={JournalPage} name="journal" />
+
       <Route path="/users" page={UsersPage} name="users" />
       <Route path="/drafts" page={DraftsPage} name="drafts" />
       <Route path="/posts" page={PostsPage} name="posts" />

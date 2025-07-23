@@ -12,7 +12,7 @@ import {
 } from 'src/constants/protocolCanvas'
 import { useProtocolStore } from 'src/stores/protocolStore'
 
-const StageBox = () => {
+const StageBox = ({ readOnly = false }) => {
   const {
     symbols,
     links,
@@ -26,7 +26,6 @@ const StageBox = () => {
     removeSymbol,
     bringSymbolToFront,
   } = useProtocolStore()
-
 
   const [hoveredLinkId, setHoveredLinkId] = React.useState<string | null>(null)
   const [hoveredSymbolId, setHoveredSymbolId] = React.useState<string | null>(
@@ -115,10 +114,14 @@ const StageBox = () => {
         width={PROTOCOL_CANVAS_WIDTH}
         height={PROTOCOL_CANVAS_HEIGHT}
         style={{ border: '2px solid #f4ce73', background: 'white' }}
-        onClick={handleStageClick}
-        onDblClick={() => {
-          if (isAddLinkMode) finishLink()
-        }}
+        onClick={readOnly ? undefined : handleStageClick}
+        onDblClick={
+          readOnly
+            ? undefined
+            : () => {
+                if (isAddLinkMode) finishLink()
+              }
+        }
       >
         <Layer>
           {/* Линии */}
@@ -129,23 +132,35 @@ const StageBox = () => {
               stroke={hoveredLinkId === link.id ? 'red' : 'blue'}
               strokeWidth={hoveredLinkId === link.id ? 4 : 2}
               tension={0}
-              onDblClick={(e) => {
-                // Если зажат shift — удаляем
-                if (e.evt.shiftKey) {
-                  removeLink(link.id)
-                  setHoveredLinkId(null)
-                  // Останавливаем дальнейшие события (на всякий случай)
-                  e.cancelBubble = true
-                }
-              }}
-              onMouseEnter={(e) => {
-                setHoveredLinkId(link.id)
-                e.target.getStage().container().style.cursor = 'pointer'
-              }}
-              onMouseLeave={(e) => {
-                setHoveredLinkId(null)
-                e.target.getStage().container().style.cursor = 'default'
-              }}
+              onDblClick={
+                readOnly
+                  ? undefined
+                  : (e) => {
+                      // Если зажат shift — удаляем
+                      if (e.evt.shiftKey) {
+                        removeLink(link.id)
+                        setHoveredLinkId(null)
+                        // Останавливаем дальнейшие события (на всякий случай)
+                        e.cancelBubble = true
+                      }
+                    }
+              }
+              onMouseEnter={
+                readOnly
+                  ? undefined
+                  : (e) => {
+                      setHoveredLinkId(link.id)
+                      e.target.getStage().container().style.cursor = 'pointer'
+                    }
+              }
+              onMouseLeave={
+                readOnly
+                  ? undefined
+                  : (e) => {
+                      setHoveredLinkId(null)
+                      e.target.getStage().container().style.cursor = 'default'
+                    }
+              }
               listening={true}
             />
           ))}
@@ -156,38 +171,56 @@ const StageBox = () => {
               x={item.x}
               y={item.y}
               draggable
-              onDragEnd={(e) => handleDragEnd(e, item.instanceId)}
-              onClick={(e) => handleSymbolClick(item, e)}
-              onContextMenu={(e) => {
-                e.evt.preventDefault()
-                rotateSymbol(item.instanceId)
-              }}
-              onDblClick={(e) => {
-                if (e.evt.shiftKey) {
-                  removeSymbol(item.instanceId)
-                  setPendingDelete(item.instanceId)
-                  e.cancelBubble = true
-                }
-                if (!e.evt.shiftKey) {
-                  bringSymbolToFront(item.instanceId)
-                  e.cancelBubble = true
-                }
-              }}
-              onMouseEnter={(e) => {
-                setHoveredSymbol({
-                  id: item.instanceId,
-                  x: item.x + 36, // чуть справа от плашки, можно подвинуть по вкусу
-                  y: item.y,
-                })
-                e.target.getStage().container().style.cursor = window.event
-                  ?.shiftKey
-                  ? 'pointer'
-                  : 'grab'
-              }}
-              onMouseLeave={(e) => {
-                setHoveredSymbol(null)
-                e.target.getStage().container().style.cursor = 'default'
-              }}
+              onDragEnd={
+                readOnly ? undefined : (e) => handleDragEnd(e, item.instanceId)
+              }
+              onClick={readOnly ? undefined : (e) => handleSymbolClick(item, e)}
+              onContextMenu={
+                readOnly
+                  ? undefined
+                  : (e) => {
+                      e.evt.preventDefault()
+                      rotateSymbol(item.instanceId)
+                    }
+              }
+              onDblClick={
+                readOnly
+                  ? undefined
+                  : (e) => {
+                      if (e.evt.shiftKey) {
+                        removeSymbol(item.instanceId)
+                        setPendingDelete(item.instanceId)
+                        e.cancelBubble = true
+                      }
+                      if (!e.evt.shiftKey) {
+                        bringSymbolToFront(item.instanceId)
+                        e.cancelBubble = true
+                      }
+                    }
+              }
+              onMouseEnter={
+                readOnly
+                  ? undefined
+                  : (e) => {
+                      setHoveredSymbol({
+                        id: item.instanceId,
+                        x: item.x + 36, // чуть справа от плашки, можно подвинуть по вкусу
+                        y: item.y,
+                      })
+                      e.target.getStage().container().style.cursor = window
+                        .event?.shiftKey
+                        ? 'pointer'
+                        : 'grab'
+                    }
+              }
+              onMouseLeave={
+                readOnly
+                  ? undefined
+                  : (e) => {
+                      setHoveredSymbol(null)
+                      e.target.getStage().container().style.cursor = 'default'
+                    }
+              }
             >
               <Rect
                 width={32}

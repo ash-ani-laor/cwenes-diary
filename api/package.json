@@ -4,6 +4,14 @@
   "private": true,
   "dependencies": {
     "@redwoodjs/api": "8.6.3",
-    "@redwoodjs/graphql-server": "8.6.3"
+    "@redwoodjs/graphql-server": "8.6.3",
+    "multiparty": "^4.2.3"
+  },
+  "prisma": {
+    "seed": "ts-node --project db/tsconfig.json db/seed.ts"
+  },
+  "devDependencies": {
+    "@types/multiparty": "^4",
+    "ts-node": "10.4.0"
   }
 }
