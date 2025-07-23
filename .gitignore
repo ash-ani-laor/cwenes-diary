@@ -5,6 +5,7 @@
 !.env.defaults
 .netlify
 .redwood/*
+web/public/uploads/*
 !.redwood/README.md
 dev.db*
 dist
