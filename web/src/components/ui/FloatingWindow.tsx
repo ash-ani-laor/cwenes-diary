@@ -1,78 +1,74 @@
-import React, { useRef, useState } from 'react'
+import React, { useState } from 'react'
+
+import { Rnd } from 'react-rnd'
+
+const DEFAULT_WIDTH = 1636
+const DEFAULT_HEIGHT = 700
+const TITLEBAR_HEIGHT = 40 // высота шапки в пикселях
 
 export const FloatingWindow = ({
   title,
   children,
   onClose,
   onMinimize,
-  initialPosition = { x: 100, y: 100 },
-  width = 480,
-  height = 300,
+  minWidth = 400,
+  minHeight = 280,
+  defaultWidth = DEFAULT_WIDTH,
+  defaultHeight = DEFAULT_HEIGHT,
+  maxWidth = 1800,
+  maxHeight = 800,
 }) => {
-  const [pos, setPos] = useState(initialPosition)
-  const [dragging, setDragging] = useState(false)
   const [minimized, setMinimized] = useState(false)
-  const offset = useRef({ x: 0, y: 0 })
+  const [size, setSize] = useState({
+    width: defaultWidth,
+    height: defaultHeight,
+  })
 
-  // Начало перетаскивания
-  const handleMouseDown = (e) => {
-    setDragging(true)
-    offset.current = {
-      x: e.clientX - pos.x,
-      y: e.clientY - pos.y,
-    }
-    // Чтобы мышь не выделяла текст
-    e.preventDefault()
-  }
-
-  // Сам процесс перемещения
-  const handleMouseMove = (e) => {
-    if (!dragging) return
-    setPos({
-      x: e.clientX - offset.current.x,
-      y: e.clientY - offset.current.y,
-    })
-  }
-
-  // Отпускаем мышку
-  const handleMouseUp = () => setDragging(false)
-
-  React.useEffect(() => {
-    if (dragging) {
-      window.addEventListener('mousemove', handleMouseMove)
-      window.addEventListener('mouseup', handleMouseUp)
-    } else {
-      window.removeEventListener('mousemove', handleMouseMove)
-      window.removeEventListener('mouseup', handleMouseUp)
-    }
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove)
-      window.removeEventListener('mouseup', handleMouseUp)
-    }
-  }, [dragging])
-
-  // eslint-disable-next-line jsx-a11y/click-events-have-key-events
-  // eslint-disable-next-line jsx-a11y/no-static-element-interactions
   return (
-    <div
+    <Rnd
+      default={{
+        x: window.innerWidth / 2 - defaultWidth / 2,
+        y: window.innerHeight / 2 - defaultHeight / 2,
+        width: defaultWidth,
+        height: defaultHeight,
+      }}
+      size={{
+        width: size.width,
+        height: minimized ? TITLEBAR_HEIGHT : size.height,
+      }}
+      minWidth={minWidth}
+      minHeight={TITLEBAR_HEIGHT}
+      maxWidth={maxWidth}
+      maxHeight={maxHeight}
+      bounds="window"
+      dragHandleClassName="floatingwindow-title"
+      enableResizing={!minimized}
+      disableDragging={false}
       style={{
-        position: 'fixed',
-        left: pos.x,
-        top: pos.y,
-        width,
-        height: minimized ? 40 : height,
-        background: 'white',
+        zIndex: 1000,
         borderRadius: 16,
         boxShadow: '0 6px 24px 0 #ceb48977',
-        zIndex: 1000,
-        userSelect: dragging ? 'none' : 'auto',
+        background: 'white',
         overflow: 'hidden',
+        userSelect: minimized ? 'none' : 'auto',
         transition: 'box-shadow 0.2s',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+      onResizeStop={(e, direction, ref, delta, position) => {
+        setSize({
+          width: ref.offsetWidth,
+          height: ref.offsetHeight,
+        })
+      }}
+      onDragStop={(e, d) => {
+        // можно добавить стейт для позиции, если хочешь сохранять
       }}
     >
       <div
+        className="floatingwindow-title"
         style={{
-          cursor: 'move',
+          cursor: minimized ? 'default' : 'move',
           background: '#f4ce73',
           padding: '8px 16px',
           borderTopLeftRadius: 16,
@@ -82,8 +78,9 @@ export const FloatingWindow = ({
           justifyContent: 'space-between',
           fontWeight: 'bold',
           userSelect: 'none',
+          height: TITLEBAR_HEIGHT,
+          minHeight: TITLEBAR_HEIGHT,
         }}
-        onMouseDown={handleMouseDown}
       >
         <span>{title}</span>
         <div style={{ display: 'flex', gap: 8 }}>
@@ -107,10 +104,10 @@ export const FloatingWindow = ({
         </div>
       </div>
       {!minimized && (
-        <div style={{ padding: 16, height: height - 40, overflow: 'auto' }}>
+        <div style={{ padding: 16, flex: 1, overflow: 'auto', minHeight: 0 }}>
           {children}
         </div>
       )}
-    </div>
+    </Rnd>
   )
 }

@@ -5,6 +5,10 @@ import ReactMarkdown from 'react-markdown'
 
 import { gql, useMutation } from '@redwoodjs/web'
 
+import DivinationCard from 'src/components/Divinations/DivinationCard'
+import { parseTags } from 'src/lib/parseTags'
+
+import { MarkdownMarkers } from '../../Journal/MarkdownMarkers'
 import { useSnackbar } from '../../ui/SnackbarManager'
 
 export const QUERY = gql`
@@ -47,6 +51,20 @@ export const Success = ({ posts, onEdit, onView }) => {
 
   const { showSnackbar } = useSnackbar()
 
+  function extractFirstImage(markdown) {
+    if (!markdown) return null
+    // Поиск ![alt](url)
+    const match = markdown.match(/!\[[^\]]*\]\((?<url>.*?)\)/)
+    return match?.groups?.url || null
+  }
+
+  function removeImagesFromPreviewButTheFirst(markdown) {
+    if (!markdown) return markdown
+    // Только первое вхождение
+    //return markdown.replace(/!\[[^\]]*\]\((.*?)\)/, '').trim()
+    return markdown.replace(/!\[[^\]]*\]\((.*?)\)/g, '').trim()
+  }
+
   // Когда пользователь нажимает на пагинатор — сбрасываем displayCount в PAGE_SIZE
   useEffect(() => {
     setDisplayCount(page * PAGE_SIZE)
@@ -69,6 +87,21 @@ export const Success = ({ posts, onEdit, onView }) => {
     observer.observe(loader.current)
     return () => observer.disconnect()
   }, [loader, posts.length])
+
+  const allTags = Array.from(
+    new Set(
+      posts
+        .flatMap((post) => parseTags(post.tags))
+        .map((tag) => tag.trim())
+        .filter(Boolean)
+    )
+  )
+
+  function flattenChildren(children) {
+    return React.Children.toArray(children)
+      .map((child) => (typeof child === 'string' ? child : ''))
+      .join('')
+  }
 
   const sorted = [...posts].sort((a, b) =>
     b.createdAt.localeCompare(a.createdAt)
@@ -102,72 +135,17 @@ export const Success = ({ posts, onEdit, onView }) => {
   }
 
   return (
-    <div className="w-full">
-      {/* Пагинатор */}
-      <div className="mb-4 flex flex-wrap items-center gap-2">
-        <button
-          onClick={() => {
-            setPage(1)
-            setDisplayCount(PAGE_SIZE)
-          }}
-          disabled={page === 1}
-          className="rounded bg-gray-200 px-2 py-1 hover:bg-gray-300 disabled:opacity-50"
-        >
-          ⏮ В начало
-        </button>
-        <button
-          onClick={() => {
-            const newPage = Math.max(page - 1, 1)
-            setPage(newPage)
-            setDisplayCount(PAGE_SIZE)
-          }}
-          disabled={page === 1}
-          className="rounded bg-gray-200 px-2 py-1 hover:bg-gray-300 disabled:opacity-50"
-        >
-          ←
-        </button>
-        {Array.from({ length: totalPages }, (_, i) => (
-          <button
-            key={i}
-            onClick={() => {
-              setPage(i + 1)
-              setDisplayCount(PAGE_SIZE)
-            }}
-            disabled={page === i + 1}
-            className={`rounded px-2 py-1 ${page === i + 1 ? 'bg-blue-200 font-bold' : 'bg-gray-100 hover:bg-gray-200'} disabled:opacity-60`}
-          >
-            {i + 1}
-          </button>
-        )).slice(Math.max(page - 3, 0), page + 2)}
-        <button
-          onClick={() => {
-            const newPage = Math.min(page + 1, totalPages)
-            setPage(newPage)
-            setDisplayCount(PAGE_SIZE)
-          }}
-          disabled={page === totalPages}
-          className="rounded bg-gray-200 px-2 py-1 hover:bg-gray-300 disabled:opacity-50"
-        >
-          →
-        </button>
-        <button
-          onClick={() => {
-            setPage(totalPages)
-            setDisplayCount(PAGE_SIZE)
-          }}
-          disabled={page === totalPages}
-          className="rounded bg-gray-200 px-2 py-1 hover:bg-gray-300 disabled:opacity-50"
-        >
-          В конец ⏭
-        </button>
-      </div>
-      {/* Список записей */}
-      <div className="space-y-4">
-        {visiblePosts.map((post) => (
+    <div className="space-y-4">
+      {visiblePosts.map((post) => {
+        const imageUrl = extractFirstImage(post.content)
+        const contentWithoutFirstImage = imageUrl
+          ? removeImagesFromPreviewButTheFirst(post.content)
+          : post.content
+
+        return (
           <div
             key={post.id}
             className="mb-4 flex flex-col rounded-lg bg-white p-4 shadow-md"
-            // БЕЗ onClick по всей карточке!
           >
             <div className="mb-2 flex items-center justify-between">
               <div className="text-xs text-gray-500">
@@ -195,16 +173,49 @@ export const Success = ({ posts, onEdit, onView }) => {
               </div>
             </div>
             <div className="mb-1 text-lg font-bold">{post.title}</div>
-            <div className="mb-1">{post.tags}</div>
+            {/* Блок для картинки */}
+            {post.divination ? (
+              <DivinationCard divination={post.divination} />
+            ) : (
+              imageUrl && (
+                <div className="mb-2 flex w-full justify-center">
+                  <img
+                    src={imageUrl}
+                    alt="Превью"
+                    className="max-h-52 rounded object-contain"
+                    loading="lazy"
+                  />
+                </div>
+              )
+            )}
+            <div className="mb-1 flex flex-wrap gap-2">
+              {parseTags(post.tags).map((tag) => (
+                <span
+                  key={tag}
+                  className="rounded bg-yellow-100 px-2 py-0.5 text-xs text-yellow-800"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
             <div className="prose prose-sm line-clamp-3 max-w-none text-gray-700">
-              <ReactMarkdown>{post.content}</ReactMarkdown>
+              <ReactMarkdown
+                components={{
+                  p: ({ node, children }) => (
+                    <p>
+                      <MarkdownMarkers>{children}</MarkdownMarkers>
+                    </p>
+                  ),
+                }}
+              >
+                {post.content}
+              </ReactMarkdown>
             </div>
           </div>
-        ))}
-
-        {/* loader для ленивой подгрузки */}
-        {showLoader && <div ref={loader} style={{ height: 24 }}></div>}
-      </div>
+        )
+      })}
+      {/* loader для ленивой подгрузки */}
+      {showLoader && <div ref={loader} style={{ height: 24 }}></div>}
     </div>
   )
 }

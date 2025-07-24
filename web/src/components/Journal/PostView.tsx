@@ -2,6 +2,10 @@ import React from 'react'
 
 import ReactMarkdown from 'react-markdown'
 
+import { parseTags } from 'src/lib/parseTags'
+
+import { MarkdownMarkers } from '../Journal/MarkdownMarkers'
+
 const PostView = ({ post }) => {
   if (!post) return null
 
@@ -18,11 +22,16 @@ const PostView = ({ post }) => {
         </span>
         <span>{new Date(post.createdAt).toLocaleString()}</span>
       </div>
-      {post.tags && (
-        <div className="mb-2 text-sm font-semibold text-blue-600">
-          Теги: {post.tags}
-        </div>
-      )}
+      <div className="mb-4 flex flex-wrap gap-2">
+        {parseTags(post.tags).map((tag) => (
+          <span
+            key={tag}
+            className="rounded bg-yellow-100 px-2 py-0.5 text-xs text-yellow-800"
+          >
+            {tag}
+          </span>
+        ))}
+      </div>
       <div className="mb-2 text-sm text-gray-400">Тип: {post.type}</div>
       {post.divination && (
         <div className="mb-2 text-sm text-green-700">
@@ -30,7 +39,17 @@ const PostView = ({ post }) => {
         </div>
       )}
       <div className="prose prose-slate dark:prose-invert mt-4 max-w-none text-base">
-        <ReactMarkdown>{post.content}</ReactMarkdown>
+        <ReactMarkdown
+          components={{
+            p: ({ node, children }) => (
+              <p>
+                <MarkdownMarkers>{children.join('')}</MarkdownMarkers>
+              </p>
+            ),
+          }}
+        >
+          {post.content}
+        </ReactMarkdown>
       </div>
     </div>
   )

@@ -8,6 +8,7 @@ import { AdapterLuxon } from '@mui/x-date-pickers/AdapterLuxon'
 import { CheckCircle2, XCircle } from 'lucide-react'
 import { DateTime } from 'luxon'
 
+import { TagsInput } from 'src/components/Journal/TagsInput'
 import { useProtocolStore } from 'src/stores/protocolStore'
 import { useIsDirty } from 'src/stores/useIsDirty'
 
@@ -107,7 +108,7 @@ export const QuestionPanel = () => {
               <CheckCircle2 className="h-4 w-4 text-green-500" />
             )}
           </span>
-          <input
+          {/* <input
             type="text"
             value={tagInput}
             onChange={handleTagInput}
@@ -133,7 +134,12 @@ export const QuestionPanel = () => {
                 )}
               </span>
             ))}
-          </div>
+          </div> */}
+          <TagsInput
+            value={tags}
+            onChange={setTags}
+            suggestions={['магия', 'расклад', 'ночь', 'вдохновение', 'солнце']}
+          />
         </div>
       )}
     </div>
