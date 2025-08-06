@@ -1,74 +1,40 @@
-/* web/src/stores/protocolStore.ts */
 import { create } from 'zustand'
+import type {
+  ProtocolState,
+  SymbolInstance,
+  LinkInstance,
+} from './protocolStore.types'
 
-export interface SymbolInstance {
-  id: number // ID из набора
-  symbol: string
-  isRune: boolean
-  instanceId: string
-  x: number
-  y: number
-  rotation?: number
-}
+const defaultTags = ['хору']
 
-export interface LinkInstance {
-  id: string
-  fromInstanceId: string
-  points: { x: number; y: number }[]
-}
-
-interface ProtocolState {
-  symbols: SymbolInstance[]
-
-  question: string
-  questionFixedTime: string | null
-  tempFixedTime: string | null // <--- добавить для выбора в пикере
-  setTempFixedTime: (date: string | null) => void
-  fixQuestion: () => void
-
-  tags: string[]
-  setTags: (tags: string[]) => void
-
-  links: LinkInstance[]
-  isAddLinkMode: boolean
-
-  addSymbol: (symbol: Omit<SymbolInstance, 'instanceId'>) => void
-  updateSymbolPosition: (instanceId: string, x: number, y: number) => void
-  rotateSymbol: (instanceId: string) => void
-  setQuestion: (q: string) => void
-  reset: () => void
-  removeSymbol: (instanceId: string) => void
-  bringSymbolToFront: (instanceId: string) => void
-
-  toggleAddLinkMode: () => void
-  startLink: (instanceId: string, x: number, y: number) => void
-  addLinkPoint: (x: number, y: number) => void
-  finishLink: () => void
-  removeLink: (id: string) => void
-
-  lastSavedAt: string | null
-  lastSavedData: string | null // сериализованный стор
-  version: number
-  markSaved: () => void
-
-  divinationId: number | null
-}
-
-export const useProtocolStore = create<ProtocolState>((set, get) => ({
+const getInitialState = () => ({
+  editingDivinationId: null,
   symbols: [],
   question: '',
   questionFixedTime: null,
   tempFixedTime: null,
-  setTempFixedTime: (date) => set({ tempFixedTime: date }),
+  tags: defaultTags,
+  links: [],
+  isAddLinkMode: false,
+  lastSavedAt: null,
+  lastSavedData: null,
+  version: 1,
+  divinationId: null,
+})
 
+export const useProtocolStore = create<ProtocolState>((set, get) => ({
+  ...getInitialState(),
+
+  setEditingDivinationId: (id) => set({ editingDivinationId: id }),
+  clearEditingDivinationId: () => set({ editingDivinationId: null }),
+
+  setQuestion: (q) => set({ question: q }),
+  setTempFixedTime: (date) => set({ tempFixedTime: date }),
   fixQuestion: () =>
     set((state) => ({
       questionFixedTime: state.tempFixedTime ?? new Date().toISOString(),
       tempFixedTime: null,
     })),
-
-  links: [],
-  isAddLinkMode: false,
 
   addSymbol: (symbol) =>
     set((state) => ({
@@ -82,14 +48,12 @@ export const useProtocolStore = create<ProtocolState>((set, get) => ({
       ],
     })),
 
-  updateSymbolPosition: (instanceId, x, y) => {
-    console.log('store update:', { instanceId, x, y })
+  updateSymbolPosition: (instanceId, x, y) =>
     set((state) => ({
       symbols: state.symbols.map((item) =>
         item.instanceId === instanceId ? { ...item, x, y } : item
       ),
-    }))
-  },
+    })),
 
   rotateSymbol: (instanceId) =>
     set((state) => ({
@@ -99,35 +63,6 @@ export const useProtocolStore = create<ProtocolState>((set, get) => ({
           : item
       ),
     })),
-
-  setQuestion: (q) => set({ question: q }),
-
-  reset: () => {
-    set({
-      symbols: [],
-      question: '',
-      questionFixedTime: null,
-      tempFixedTime: null,
-      links: [],
-      isAddLinkMode: false,
-      tags: ['хору'],
-      version: 1,
-      divinationId: null,
-      lastSavedAt: new Date().toISOString(),
-      lastSavedData: JSON.stringify({
-        symbols: [],
-        question: '',
-        questionFixedTime: null,
-        tempFixedTime: null,
-        links: [],
-        isAddLinkMode: false,
-        tags: ['хору'],
-        version: 1,
-        divinationId: null,
-      }),
-    })
-    console.log('[RESET] После сброса:', useProtocolStore.getState())
-  },
 
   removeSymbol: (instanceId) =>
     set((state) => ({
@@ -142,13 +77,13 @@ export const useProtocolStore = create<ProtocolState>((set, get) => ({
       if (idx === -1) return {}
       const newArr = [...state.symbols]
       const [item] = newArr.splice(idx, 1)
-      newArr.push(item) // В конец = поверх всех
+      newArr.push(item)
       return { symbols: newArr }
     }),
 
+  setTags: (tags) => set({ tags }),
   toggleAddLinkMode: () =>
     set((state) => ({ isAddLinkMode: !state.isAddLinkMode })),
-
   startLink: (instanceId, x, y) =>
     set((state) => ({
       links: [
@@ -160,32 +95,20 @@ export const useProtocolStore = create<ProtocolState>((set, get) => ({
         },
       ],
     })),
-
   addLinkPoint: (x, y) =>
     set((state) => {
-      if (state.links.length === 0) return {} as any
+      if (state.links.length === 0) return {}
       const newLinks = [...state.links]
       const last = newLinks[newLinks.length - 1]
       last.points = [...last.points, { x, y }]
       newLinks[newLinks.length - 1] = last
       return { links: newLinks }
     }),
-  finishLink: () =>
-    set((state) => {
-      // Можно просто выключить режим
-      return { isAddLinkMode: false }
-    }),
+  finishLink: () => set({ isAddLinkMode: false }),
   removeLink: (id) =>
     set((state) => ({
       links: state.links.filter((link) => link.id !== id),
     })),
-
-  tags: ['хору'],
-  setTags: (tags) => set({ tags }),
-
-  lastSavedAt: null,
-  lastSavedData: null,
-  version: 1,
 
   markSaved: () => {
     set((state) => {
@@ -194,9 +117,8 @@ export const useProtocolStore = create<ProtocolState>((set, get) => ({
         ...state,
         lastSavedAt: undefined,
         lastSavedData: undefined,
-        version: nextVersion, // <-- именно это!
+        version: nextVersion,
       })
-      console.log('[markSaved] Сохранили стор:', snapshot)
       return {
         lastSavedAt: new Date().toISOString(),
         lastSavedData: snapshot,
@@ -205,5 +127,10 @@ export const useProtocolStore = create<ProtocolState>((set, get) => ({
     })
   },
 
-  divinationId: null,
+  reset: () =>
+    set({
+      ...getInitialState(),
+      lastSavedAt: new Date().toISOString(),
+      lastSavedData: JSON.stringify(getInitialState()),
+    }),
 }))

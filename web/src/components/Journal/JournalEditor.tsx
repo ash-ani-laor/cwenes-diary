@@ -1,124 +1,179 @@
-import React, { useState, useRef } from 'react'
-
+import React, { useState, useEffect, useCallback } from 'react'
 import MDEditor from '@uiw/react-md-editor'
-import DivinationReadonlyView from 'web/src/components/Journal/DivinationReadonlyView'
+import gql from 'graphql-tag'
+import { useQuery } from '@redwoodjs/web'
 
-import { gql, useMutation, useQuery } from '@redwoodjs/web'
-
+import DivinationReadonlyView from 'web/src/components/GodsAsking/Protocol/DivinationReadonlyView'
+import ProtocolFullView from '../GodsAsking/Protocol/ProtocolFullView'
+import DivinationEditor4FloatingWindow from '../GodsAsking/Protocol/DivinationEditor4FloatingWindow'
+import { DivinationsList } from '../GodsAsking/Protocol/DivinationsList'
+import { FloatingWindow } from '../ui/FloatingWindow'
+import { TagsInput } from './TagsInput'
 import { parseTags } from 'src/lib/parseTags'
 
-import { DivinationsList } from '../GodsAsking/Protocol/DivinationsList'
-import FilePickerWindow from '../ui/FilePickerWindow'
-import { FloatingWindow } from '../ui/FloatingWindow'
-import { useSnackbar } from '../ui/SnackbarManager'
-
-import { TagsInput } from './TagsInput'
-
-const CREATE_POST_MUTATION = gql`
-  mutation CreatePostMutation($input: CreatePostInput!) {
-    createPost(input: $input) {
+// ГрафQL запрос для получения расклада
+const DIVINATION_QUERY = gql`
+  query GetDivination($id: Int!) {
+    divination(id: $id) {
       id
-      title
-      content
+      question
+      questionFixedTime
+      layout
       tags
-      type
-      createdAt
-      updatedAt
+      previewImage
+      timestamp
+      links
     }
   }
 `
 
-const UPDATE_POST_MUTATION = gql`
-  mutation UpdatePostMutation($id: Int!, $input: UpdatePostInput!) {
-    updatePost(id: $id, input: $input) {
-      id
-      title
-      content
-      tags
-      type
-      createdAt
-      updatedAt
-    }
+// Утилита для парсинга расклада
+function parseDivination(raw) {
+  if (!raw) return null
+  return {
+    ...raw,
+    tags: Array.isArray(raw.tags)
+      ? raw.tags
+      : (() => {
+          try {
+            return JSON.parse(raw.tags)
+          } catch {
+            return []
+          }
+        })(),
+    layout:
+      typeof raw.layout === 'string'
+        ? (() => {
+            try {
+              return JSON.parse(raw.layout)
+            } catch {
+              return {}
+            }
+          })()
+        : raw.layout,
+    links:
+      typeof raw.links === 'string'
+        ? (() => {
+            try {
+              return JSON.parse(raw.links)
+            } catch {
+              return []
+            }
+          })()
+        : raw.links,
   }
-`
+}
 
 const JournalEditor = ({ post = {}, onClose, allTags }) => {
+  // Основные состояния
   const [title, setTitle] = useState(post.title || '')
   const [content, setContent] = useState(post.content || '')
-  const [tags, setTags] = useState(() => {
-    // универсально для строки или json
-    return parseTags(post.tags || 'заметка').join(', ')
-  })
-
-  const [createPost, { loading: creating, error: createError }] =
-    useMutation(CREATE_POST_MUTATION)
-  const [updatePost, { loading: updating, error: updateError }] =
-    useMutation(UPDATE_POST_MUTATION)
-
-  const [divinationId, setDivinationId] = useState(post.divinationId ?? null)
-  const [showDivinations, setShowDivinations] = useState(false)
-  const [showFullDivination, setShowFullDivination] = useState(false)
-
-  // Грузим подробную инфу о выбранном раскладе
-  const { data: divData } = useQuery(
-    gql`
-      query GetDivination($id: Int!) {
-        divination(id: $id) {
-          id
-          question
-          questionFixedTime
-          tags
-        }
-      }
-    `,
-    { variables: { id: divinationId }, skip: !divinationId }
+  const [tags, setTags] = useState(() =>
+    parseTags(post.tags || 'заметка').join(', ')
   )
-
-  const divination = divData?.divination
-
-  // const fileInputRef = useRef()
-  const { showSnackbar } = useSnackbar()
-
   const [showFilePicker, setShowFilePicker] = useState(false)
 
-  const handleSave = async () => {
-    const input = {
-      userId: post.userId ?? 1,
-      title,
-      content,
-      tags,
-      type: post.type ?? 'default',
-      divinationId,
-    }
+  // Расклад
+  const [divinationId, setDivinationId] = useState(null)
+  const [divination, setDivination] = useState(null)
 
-    try {
-      if (post.id) {
-        await updatePost({ variables: { id: post.id, input } })
-        showSnackbar({ message: 'Пост обновлён!', severity: 'success' })
-      } else {
-        await createPost({ variables: { input } })
-        showSnackbar({ message: 'Пост создан!', severity: 'success' })
+  // Модалки и состояния показа
+  const [showDivinations, setShowDivinations] = useState(false)
+  const [showDivinationEditor, setShowDivinationEditor] = useState(false)
+  const [showFullDivination, setShowFullDivination] = useState(false)
+  const [showFullDivinationEdit, setShowFullDivinationEdit] = useState(false)
+
+  // Загрузка расклада по id
+  const { data } = useQuery(DIVINATION_QUERY, {
+    variables: { id: divinationId ? Number(divinationId) : undefined },
+    skip: !divinationId,
+  })
+
+  useEffect(() => {
+    if (data?.divination) {
+      const parsed = parseDivination(data.divination)
+      setDivination(parsed)
+    }
+  }, [data])
+
+  // Открепить расклад
+  const handleDetachDivination = () => {
+    setDivinationId(null)
+    setDivination(null)
+  }
+
+  // Привязать созданный расклад
+  const handleNewDivination = (newDiv) => {
+    setDivinationId(Number(newDiv.id))
+    setDivination(parseDivination(newDiv))
+    setShowDivinationEditor(false)
+  }
+
+  // Выбрать расклад из списка
+  const handleSelectDivination = (id) => {
+    setDivinationId(Number(id))
+    setShowDivinations(false)
+  }
+
+  // Клик по символу в просмотре (для вставки ссылки в текст редактора)
+  const handleSymbolClick = useCallback(
+    (symbol) => {
+      // Например: [[hoggva:Имя]] или [[rune:Имя]]
+      let marker
+      if (symbol.type === 'hoggva') marker = `[[hoggva:${symbol.name}]]`
+      else if (symbol.type === 'rune') marker = `[[rune:${symbol.name}]]`
+      else marker = `[[${symbol.type}:${symbol.name}]]`
+      setContent((c) => c + ' ' + marker)
+    },
+    [setContent]
+  )
+
+  // Условия для показа кнопок привязать/создать
+  const showChooseOrCreate =
+    !divinationId && !divination && !showDivinations && !showDivinationEditor
+
+  // Состояние блокировки (для межоконного контроля, см. ниже)
+  const [editLock, setEditLock] = useState(false)
+
+  // --- Межвкладочная блокировка редактирования ---
+  useEffect(() => {
+    const lockKey = divinationId
+      ? `vaer:divination:editing:${divinationId}`
+      : null
+    if (!showFullDivinationEdit || !divinationId) return
+
+    // Проверка: если уже кто-то редактирует
+    const existing = localStorage.getItem(lockKey)
+    if (existing && existing !== window.name) {
+      setEditLock(true)
+      alert('Этот расклад уже редактируется в другой вкладке или окне!')
+      setShowFullDivinationEdit(false)
+      return
+    }
+    // Помечаем: мы редактируем
+    localStorage.setItem(lockKey, window.name || String(Math.random()))
+
+    // Слежение за локалсториджем — если кто-то другой начнёт редактировать, закроем окно
+    const handler = (e) => {
+      if (e.key === lockKey && e.newValue && e.newValue !== window.name) {
+        alert(
+          'Расклад открыт на редактирование в другом окне/вкладке, здесь будет закрыт.'
+        )
+        setShowFullDivinationEdit(false)
+        setEditLock(true)
       }
-      onClose()
-    } catch (e) {
-      showSnackbar({
-        message: 'Ошибка при сохранении: ' + e.message,
-        severity: 'error',
-        duration: 6000,
-      })
     }
-  }
-
-  const handleSymbolClick = (symbol) => {
-    let marker
-    if (symbol.type === 'hoggva') marker = `[[hoggva:${symbol.name}]]`
-    else if (symbol.type === 'rune') marker = `[[rune:${symbol.name}]]`
-    else marker = `[[${symbol.type}:${symbol.name}]]`
-    setContent((c) => c + ' ' + marker)
-  }
+    window.addEventListener('storage', handler)
+    return () => {
+      // По закрытию снимаем блокировку
+      if (lockKey) localStorage.removeItem(lockKey)
+      window.removeEventListener('storage', handler)
+    }
+  }, [showFullDivinationEdit, divinationId])
 
   return (
     <div className="flex min-h-0 w-full max-w-full flex-1 flex-col rounded bg-white p-4 shadow-md">
+      {/* Заголовок */}
       <input
         className="mb-4 w-full rounded border px-3 py-2 text-xl font-semibold"
         value={title}
@@ -126,31 +181,15 @@ const JournalEditor = ({ post = {}, onClose, allTags }) => {
         placeholder="Заголовок"
       />
 
+      {/* Теги */}
       <TagsInput value={tags} onChange={setTags} suggestions={allTags} />
 
+      {/* Текст */}
       <div
         className="flex min-h-0 flex-1 flex-col"
         style={{ minHeight: 0, flex: 1 }}
       >
-        <div
-          style={{ height: '60vh', minHeight: 0 }}
-          onDrop={async (e) => {
-            e.preventDefault()
-            const file = e.dataTransfer.files?.[0]
-            if (!file) return
-            const formData = new FormData()
-            formData.append('file', file)
-            const res = await fetch('http://localhost:9999/upload', {
-              method: 'POST',
-              body: formData,
-            })
-            const data = await res.json()
-            if (data.url) {
-              setContent((c) => c + `\n\n![${file.name}](${data.url})\n\n`)
-            }
-          }}
-          onDragOver={(e) => e.preventDefault()}
-        >
+        <div style={{ height: '60vh', minHeight: 0 }}>
           <MDEditor
             className="min-h-0 flex-1"
             value={content}
@@ -163,136 +202,155 @@ const JournalEditor = ({ post = {}, onClose, allTags }) => {
           />
         </div>
       </div>
-      <div className="mt-4 flex justify-end gap-2">
-        <div className="mb-4">
-          <label className="mb-1 block text-sm font-semibold">
-            Связанный расклад
-          </label>
-          {divinationId && divination ? (
-            <div className="flex flex-col gap-2 rounded bg-yellow-50 p-3 shadow-sm">
-              {/* Визуальный предпросмотр расклада с кликабельными плашками */}
-              <DivinationReadonlyView
-                divination={divination}
-                onSymbolClick={handleSymbolClick}
-              />
-              <div className="mt-2 flex gap-2">
-                <button
-                  className="rounded bg-gray-100 px-2 py-1 text-xs"
-                  onClick={() => setDivinationId(null)}
-                >
-                  Открепить
-                </button>
-                <button
-                  className="rounded bg-blue-100 px-2 py-1 text-xs"
-                  onClick={() => setShowDivinations(true)}
-                >
-                  Заменить расклад
-                </button>
-                <button
-                  className="rounded bg-yellow-100 px-2 py-1 text-xs"
-                  onClick={() => setShowDivinationEditor(true)}
-                >
-                  Открыть полностью
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="flex gap-2">
-              <button
-                className="rounded bg-yellow-100 px-3 py-1 text-sm"
-                onClick={() => setShowDivinations(true)}
-              >
-                + Привязать расклад
-              </button>
-              <button
-                className="rounded bg-blue-100 px-3 py-1 text-sm"
-                onClick={() => setShowDivinationEditor(true)}
-              >
-                Создать новый
-              </button>
-            </div>
-          )}
+
+      {/* Привязать/создать расклад */}
+      {showChooseOrCreate && (
+        <div className="my-4 flex gap-2">
+          <button
+            className="rounded bg-gray-300 px-4 py-2 hover:bg-gray-400"
+            onClick={() => setShowDivinations(true)}
+          >
+            + Привязать расклад
+          </button>
+          <button
+            className="rounded bg-gray-300 px-4 py-2 hover:bg-gray-400"
+            onClick={() => setShowDivinationEditor(true)}
+          >
+            Создать новый
+          </button>
         </div>
+      )}
+
+      {/* Предпросмотр + панель управления раскладом */}
+      {divinationId && divination && (
+        <div className="my-4 rounded bg-yellow-50 p-2">
+          <DivinationReadonlyView
+            divination={divination}
+            onSymbolClick={handleSymbolClick}
+          />
+          <div className="mt-2 flex gap-2">
+            <button
+              className="rounded bg-gray-100 px-2 py-1 text-xs"
+              onClick={handleDetachDivination}
+            >
+              Открепить
+            </button>
+            <button
+              className="rounded bg-blue-100 px-2 py-1 text-xs"
+              onClick={() => setShowDivinations(true)}
+            >
+              Заменить расклад
+            </button>
+            <button
+              className="rounded bg-yellow-100 px-2 py-1 text-xs"
+              onClick={() => setShowFullDivination(true)}
+            >
+              Просмотр расклада
+            </button>
+            <button
+              className="rounded bg-blue-100 px-2 py-1 text-xs"
+              onClick={() => {
+                // Проверяем лок на редактирование
+                if (editLock) {
+                  alert(
+                    'Этот расклад уже редактируется в другой вкладке или окне!'
+                  )
+                  return
+                }
+                setShowFullDivinationEdit(true)
+              }}
+            >
+              Открыть для редактирования
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Управляющие кнопки */}
+      <div className="mt-4 flex gap-2">
         <button
-          type="button"
-          className="mr-2 rounded bg-green-600 px-4 py-2 text-white hover:bg-green-800"
+          className="rounded bg-green-600 px-4 py-2 text-white hover:bg-green-800"
           onClick={() => setShowFilePicker(true)}
         >
           Графика
         </button>
         <button
           className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-800"
-          onClick={handleSave}
+          onClick={() => alert('Сохраняем пост (тест)!')}
         >
           Сохранить
         </button>
         <button
           className="rounded bg-gray-300 px-4 py-2 hover:bg-gray-400"
-          onClick={onClose}
+          onClick={() => window.location.reload()}
         >
           Отмена
         </button>
       </div>
-      {/*
-      DIVIDER DIVIDER DIVIDER DIVIDER DIVIDER DIVIDER DIVIDER DIVIDER
-      DIVIDER DIVIDER DIVIDER DIVIDER DIVIDER DIVIDER DIVIDER DIVIDER
-      DIVIDER DIVIDER DIVIDER DIVIDER DIVIDER DIVIDER DIVIDER DIVIDER
-      */}
-      {divination && (
-        <>
-          <DivinationCard
-            divination={divination}
-            onClick={() => setShowFullDivination(true)}
-          />
-          {showFullDivination && (
-            <FloatingWindow onClose={() => setShowFullDivination(false)}>
-              {/* Здесь покажи расклад полностью, или даже снова DivinationCard без compact */}
-              <div className="p-4">
-                <h2 className="mb-2 text-xl font-bold">
-                  {divination.question}
-                </h2>
-                {/* Всё, что хочешь показать! */}
-              </div>
-            </FloatingWindow>
-          )}
-        </>
-      )}
+
+      {/* --- Модальные окна --- */}
+
+      {/* Выбор расклада */}
       {showDivinations && (
         <FloatingWindow
           title="Выбор расклада"
           onClose={() => setShowDivinations(false)}
+          defaultWidth="900"
         >
-          <DivinationsList
-            onSelect={(id) => {
-              setDivinationId(id)
-              setShowDivinations(false)
-            }}
+          <DivinationsList onSelect={handleSelectDivination} />
+        </FloatingWindow>
+      )}
+
+      {/* Создание нового расклада */}
+      {showDivinationEditor && (
+        <FloatingWindow
+          title="Создать новый расклад"
+          onClose={() => setShowDivinationEditor(false)}
+          defaultWidth="900"
+        >
+          <DivinationEditor4FloatingWindow
+            onSave={handleNewDivination}
+            onCancel={() => setShowDivinationEditor(false)}
           />
         </FloatingWindow>
       )}
-      {/* {showDivinationEditor && (
+
+      {/* Просмотр расклада — только вопрос/время/теги/символы */}
+      {showFullDivination && (
         <FloatingWindow
-          title="Новый расклад"
-          onClose={() => setShowDivinationEditor(false)}
+          title="Просмотр расклада"
+          onClose={() => setShowFullDivination(false)}
+          defaultWidth="700"
+          defaultHeight="700"
         >
-          <div className="p-8 text-lg text-gray-600">
-            ⚠️ Редактор новых раскладов не реализован.
-            <br />
-            <span className="text-sm text-gray-400">
-              (Создавать расклады можно в соответствующем разделе “Расклады”.)
-            </span>
-          </div>
-        </FloatingWindow>
-      )} */}
-      {showFilePicker && (
-        <FloatingWindow onClose={() => setShowFilePicker(false)}>
-          <FilePickerWindow
-            onClose={() => setShowFilePicker(false)}
-            onSelect={(url, filename) => {
-              setContent((c) => c + `\n\n![${filename || 'image'}](${url})\n\n`)
-            }}
+          <DivinationReadonlyView
+            divination={divination}
+            onSymbolClick={handleSymbolClick}
           />
         </FloatingWindow>
+      )}
+
+      {/* Полный редактор расклада (ProtocolFullView) */}
+      {showFullDivinationEdit && (
+        <FloatingWindow
+          title="Редактирование расклада"
+          onClose={() => setShowFullDivinationEdit(false)}
+          defaultWidth="1200"
+          defaultHeight="800"
+        >
+          <ProtocolFullView
+            divination={divination}
+            mode="edit"
+            onClose={() => setShowFullDivinationEdit(false)}
+          />
+        </FloatingWindow>
+      )}
+
+      {/* Окно выбора графики */}
+      {showFilePicker && (
+        <div className="mt-4 rounded bg-green-100 p-4">
+          Тестовое окно "Графика"
+        </div>
       )}
     </div>
   )

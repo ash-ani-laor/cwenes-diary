@@ -316,7 +316,7 @@ const ControlPanel = () => {
             <DivinationsList
               onSelect={(id) => {
                 setShowList(false)
-                setSelectedId(id)
+                setSelectedId(Number(id))
               }}
             />
           </div>

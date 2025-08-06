@@ -17,3 +17,10 @@
   min-height: 0 !important;
   max-height: 100vh !important; /* ограничение на случай выхода за экран */
 }
+
+@font-face {
+  font-family: 'Sylfaen';
+  src: url('/sylfaen.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}

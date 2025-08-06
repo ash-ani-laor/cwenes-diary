@@ -34,7 +34,7 @@ export const CommandBar = ({ onOpenOR }) => (
           fontSize: 16,
         }}
       >
-        ОР
+        Герб
       </button>
       {/* Сюда потом добавим другие иконки/кнопки */}
     </div>

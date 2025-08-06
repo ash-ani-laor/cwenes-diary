@@ -1,8 +1,9 @@
 /**
  * web\src\components\GodsAsking\Protocol\DivinationsList.tsx
  */
+import gql from 'graphql-tag'
 
-import { useMutation, useQuery, gql } from '@redwoodjs/web'
+import { useMutation, useQuery } from '@redwoodjs/web'
 
 import { useDialog } from 'src/components/ui/DialogManager'
 import { useSnackbar } from 'src/components/ui/SnackbarManager'
@@ -51,7 +52,7 @@ export const DivinationsList = ({ onSelect }) => {
         confirmText: 'Загрузить',
         cancelText: 'Отмена',
         onConfirm: () => {
-          onSelect(id)
+          onSelect(Number(id))
           showSnackbar({
             message: 'Расклад загружен',
             severity: 'success',

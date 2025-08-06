@@ -24,7 +24,6 @@ export const QuestionPanel = () => {
   const lastSavedAt = useProtocolStore((s) => s.lastSavedAt)
 
   const isDirty = useIsDirty()
-  console.log('[UI] isDirty:', isDirty)
 
   const [tagInput, setTagInput] = useState('')
 
@@ -108,33 +107,7 @@ export const QuestionPanel = () => {
               <CheckCircle2 className="h-4 w-4 text-green-500" />
             )}
           </span>
-          {/* <input
-            type="text"
-            value={tagInput}
-            onChange={handleTagInput}
-            onKeyDown={handleTagKeyDown}
-            placeholder="Добавить тег..."
-            className="rounded border p-1 text-sm"
-          />
-          <div className="flex flex-wrap gap-1">
-            {tags.map((tag) => (
-              <span
-                key={tag}
-                className="flex items-center rounded bg-blue-100 px-2 py-0.5 text-sm"
-              >
-                {tag}
-                {tags.length > 1 && (
-                  <button
-                    className="ml-1 text-red-500"
-                    onClick={() => removeTag(tag)}
-                    tabIndex={-1}
-                  >
-                    ×
-                  </button>
-                )}
-              </span>
-            ))}
-          </div> */}
+
           <TagsInput
             value={tags}
             onChange={setTags}

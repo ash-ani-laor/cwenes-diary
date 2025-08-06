@@ -8,49 +8,14 @@ import gql from 'graphql-tag'
 
 import { useMutation, useQuery } from '@redwoodjs/web'
 
+import {
+  DRAFTS,
+  UPDATE_DRAFT,
+  CREATE_DRAFT,
+  DELETE_DRAFT,
+} from 'src/components/GodsAsking/Protocol/draft.gql'
 import { DraftTypes } from 'src/constants/draftTypes'
 import { useProtocolStore } from 'src/stores/protocolStore'
-
-// --- GQL ---
-const DRAFTS = gql`
-  query Drafts {
-    drafts {
-      id
-      userId
-      type
-      data
-      updatedAt
-    }
-  }
-`
-
-const CREATE_DRAFT = gql`
-  mutation CreateDraft($input: CreateDraftInput!) {
-    createDraft(input: $input) {
-      id
-      data
-      updatedAt
-    }
-  }
-`
-
-const UPDATE_DRAFT = gql`
-  mutation UpdateDraft($id: Int!, $input: UpdateDraftInput!) {
-    updateDraft(id: $id, input: $input) {
-      id
-      data
-      updatedAt
-    }
-  }
-`
-
-const DELETE_DRAFT = gql`
-  mutation DeleteDraft($id: Int!) {
-    deleteDraft(id: $id) {
-      id
-    }
-  }
-`
 
 // --- Основной компонент ---
 export const DraftManager = ({ type = DraftTypes.PROTOCOL, userId = 1 }) => {

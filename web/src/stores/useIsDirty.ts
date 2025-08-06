@@ -10,7 +10,7 @@ export const useIsDirty = () => {
     lastSavedAt: undefined,
     lastSavedData: undefined,
   })
-  console.log('[DIRTY-CHECK] lastSavedData:', lastSavedData)
-  console.log('[DIRTY-CHECK] currentData:', currentData)
+  // console.log('[DIRTY-CHECK] lastSavedData:', lastSavedData)
+  // console.log('[DIRTY-CHECK] currentData:', currentData)
   return lastSavedData !== currentData
 }
